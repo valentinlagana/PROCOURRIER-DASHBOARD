@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProCourrier · Cotizador de envíos AMBA</title>
+<meta name="description" content="Cotizador de envíos por zonas para CABA y GBA. Definí el depósito y el mapa pinta las 4 tarifas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ══════════════ PANEL LATERAL ══════════════ -->
+  <aside class="panel">
+
+    <header class="brand">
+      <div class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 13h10V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v7Z"/>
+          <path d="M13 9h4.5l3.5 4v4h-8V9Z"/>
+          <circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>
+        </svg>
+      </div>
+      <div class="brand__text">
+        <strong>ProCourrier</strong>
+        <span>Cotizador de envíos · AMBA</span>
+      </div>
+    </header>
+
+    <div class="panel__scroll">
+
+      <!-- Paso 1 -->
+      <section class="card" id="step-origen">
+        <div class="card__head">
+          <span class="step">1</span>
+          <div>
+            <h2>Depósito de origen</h2>
+            <p>Buscá la dirección o marcá el punto en el mapa.</p>
+          </div>
+        </div>
+
+        <div class="search" id="search-origen">
+          <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="input-origen" placeholder="Ej: Av. Corrientes 1234, CABA" autocomplete="off" spellcheck="false">
+          <button class="search__clear" id="clear-origen" type="button" aria-label="Borrar" hidden>&times;</button>
+          <ul class="suggest" id="suggest-origen" hidden></ul>
+        </div>
+
+        <button class="btn btn--ghost btn--block" id="btn-pick">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          Marcar en el mapa
+        </button>
+
+        <div class="origen-chip" id="origen-chip" hidden>
+          <span class="dot"></span>
+          <span id="origen-label">—</span>
+        </div>
+      </section>
+
+      <!-- Paso 2 -->
+      <section class="card" id="step-tarifas">
+        <div class="card__head">
+          <span class="step">2</span>
+          <div>
+            <h2>Las 4 tarifas</h2>
+            <p>Hasta cuántos km llega cada una y cuánto sale.</p>
+          </div>
+        </div>
+
+        <div class="tarifa-head">
+          <span></span><span>Hasta (km)</span><span>Precio</span>
+        </div>
+        <div id="tarifas"></div>
+
+        <label class="toggle-row">
+          <span>
+            Factor de recorrido
+            <em title="Multiplica la distancia en línea recta para aproximar los km reales de calle.">?</em>
+          </span>
+          <input type="number" id="factor" value="1.30" min="1" max="2" step="0.05">
+        </label>
+
+        <p class="hint">Los valores son de muestra: cambiá radios y precios y el mapa se repinta al instante.</p>
+      </section>
+
+      <!-- Paso 3 -->
+      <section class="card" id="step-cotizar">
+        <div class="card__head">
+          <span class="step">3</span>
+          <div>
+            <h2>Cotizar un envío</h2>
+            <p>Dirección de destino del paquete.</p>
+          </div>
+        </div>
+
+        <div class="search" id="search-destino">
+          <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="input-destino" placeholder="Ej: Hipólito Yrigoyen 500, Quilmes" autocomplete="off" spellcheck="false" disabled>
+          <button class="search__clear" id="clear-destino" type="button" aria-label="Borrar" hidden>&times;</button>
+          <ul class="suggest" id="suggest-destino" hidden></ul>
+        </div>
+
+        <div class="quote" id="quote" hidden>
+          <div class="quote__top">
+            <span class="quote__badge" id="quote-badge">Tarifa 1</span>
+            <span class="quote__km" id="quote-km">— km</span>
+          </div>
+          <div class="quote__price" id="quote-price">—</div>
+          <div class="quote__where" id="quote-where">—</div>
+        </div>
+      </section>
+
+      <!-- Cobertura -->
+      <section class="card" id="step-cobertura">
+        <div class="card__head">
+          <span class="step step--plain">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          </span>
+          <div>
+            <h2>Cobertura por tarifa</h2>
+            <p>Barrios y partidos que caen en cada zona.</p>
+          </div>
+        </div>
+        <div id="cobertura" class="cobertura">
+          <p class="empty">Definí el depósito para ver la cobertura.</p>
+        </div>
+        <button class="btn btn--ghost btn--block" id="btn-export" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
+          Exportar CSV
+        </button>
+      </section>
+
+      <p class="foot">Borrador · distancias en línea recta ajustadas por el factor de recorrido.</p>
+    </div>
+  </aside>
+
+  <!-- ══════════════ MAPA ══════════════ -->
+  <main class="map-wrap">
+    <div id="map"></div>
+
+    <div class="map-top">
+      <div class="segmented" role="group" aria-label="Modo de vista">
+        <button data-view="ambas" class="is-active">Ambas</button>
+        <button data-view="anillos">Anillos</button>
+        <button data-view="zonas">Zonas</button>
+      </div>
+    </div>
+
+    <div class="legend" id="legend" hidden>
+      <div class="legend__title">Tarifas desde el depósito</div>
+      <ul id="legend-items"></ul>
+    </div>
+
+    <div class="placeholder" id="placeholder">
+      <div class="placeholder__card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        <strong>Ubicá tu depósito</strong>
+        <span>Buscá la dirección o hacé click en el mapa y las 4 tarifas se dibujan solas.</span>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" hidden></div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
