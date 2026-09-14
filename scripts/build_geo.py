@@ -5,8 +5,7 @@ cubre la red de ProCourrier, con el punto de referencia de cada uno.
 Fuentes: datos abiertos del GCBA (barrios) e IGN (departamentos).
 """
 import json, os, unicodedata
-from shapely.geometry import shape, mapping, Polygon
-from shapely.ops import unary_union
+from shapely.geometry import shape, mapping
 
 SCRATCH = os.environ.get('PC_SCRATCH', '.')
 OUT = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -41,10 +40,6 @@ CABECERA = {
     "Pilar":             (-34.4571, -58.9142),
 }
 
-# La red cobra distinto el norte y el sur de La Matanza. El corte es la
-# mediatriz entre San Justo (norte) y el sudoeste del partido.
-LM_NORTE = (-34.6774, -58.5608)
-LM_SUR   = (-34.8327, -58.7011)
 
 def norm(s):
     return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn").lower()
@@ -54,28 +49,15 @@ def redondear(o, nd=4):
     if isinstance(o, float): return round(o, nd)
     return o
 
-def partir_la_matanza(geom):
-    """Corta el partido en dos por la mediatriz entre el norte y el sur."""
-    (ay, ax), (by, bx) = LM_NORTE, LM_SUR
-    mx, my = (ax + bx) / 2, (ay + by) / 2
-    dx, dy = bx - ax, by - ay
-    largo = (dx * dx + dy * dy) ** .5
-    nx, ny = dx / largo, dy / largo          # hacia el sur
-    ux, uy = -ny, nx                         # sobre la línea de corte
-    L = 5.0
-    p1 = (mx + ux * L, my + uy * L)
-    p2 = (mx - ux * L, my - uy * L)
-    norte = Polygon([p1, p2, (p2[0] - nx * L, p2[1] - ny * L), (p1[0] - nx * L, p1[1] - ny * L)])
-    sur   = Polygon([p1, p2, (p2[0] + nx * L, p2[1] + ny * L), (p1[0] + nx * L, p1[1] + ny * L)])
-    g = shape(geom).buffer(0)
-    return g.intersection(norte), g.intersection(sur)
+# 0,0001° ~ 11 m: el borde queda fiel al oficial incluso con mucho zoom.
+TOLERANCIA = 0.0001
 
 def salida(nombre, g, region, cordon, en_red, ref=None, **extra):
-    g = g.simplify(0.0015 if region == "GBA" else 0.0006, preserve_topology=True)
+    g = g.simplify(TOLERANCIA, preserve_topology=True)
     p = ref or (lambda c: (c.y, c.x))(g.representative_point())
     props = {"nombre": nombre, "region": region, "cordon": cordon, "enRed": en_red,
              "lat": round(p[0], 5), "lon": round(p[1], 5), **extra}
-    return {"type": "Feature", "properties": props, "geometry": redondear(mapping(g))}
+    return {"type": "Feature", "properties": props, "geometry": redondear(mapping(g), 5)}
 
 def main():
     partidos = json.load(open(f"{SCRATCH}/ba_dptos.json"))
@@ -90,12 +72,6 @@ def main():
         if k not in quiero: continue
         faltan.discard(k)
         nombre, cordon, en_red = quiero[k]
-
-        if nombre == "La Matanza":
-            norte, sur = partir_la_matanza(f["geometry"])
-            feats.append(salida("La Matanza Norte", norte, "GBA", 1, True, ref=LM_NORTE))
-            feats.append(salida("La Matanza Sur", sur, "GBA", 2, True, ref=LM_SUR))
-            continue
 
         feats.append(salida(nombre, shape(f["geometry"]).buffer(0), "GBA", cordon, en_red,
                             ref=CABECERA.get(nombre)))

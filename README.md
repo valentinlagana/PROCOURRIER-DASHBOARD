@@ -62,12 +62,14 @@ origen × zona donde existe, y la distancia sólo para depósitos nuevos.
 
 ## Área de cobertura
 
-86 zonas con servicio: 48 barrios de CABA y 38 partidos del GBA. La red llega
+85 zonas con servicio: 48 barrios de CABA y 37 partidos del GBA. La red llega
 hasta **Luján, Dique Luján (Tigre), Zárate, Campana y La Plata** por el sur.
 
-La Matanza se divide en **Norte** y **Sur**, porque la red las cobra distinto
-(desde CABA, T2 y T3 respectivamente). El corte es la mediatriz entre San Justo
-y el sudoeste del partido.
+La red cobra distinto el norte y el sur de La Matanza (desde CABA, T2 y T3),
+pero el partido va entero: no existe un límite oficial entre ambas mitades y
+dibujar uno inventado daría un mapa que no corresponde con la realidad. Para
+separarlas hacen falta los límites de localidad, que ninguna fuente pública
+publica como polígono para el conurbano.
 
 Brandsen, Exaltación de la Cruz, General Las Heras, Navarro y San Andrés de
 Giles se dibujan para dar contexto geográfico pero están marcados fuera de la
@@ -87,10 +89,13 @@ Lo último configurado queda guardado en el navegador (`localStorage`).
 
 ## Datos geográficos
 
-`data/amba.geojson` (~94 KB, 91 polígonos simplificados):
+`data/amba.geojson` (~306 KB, 90 polígonos):
 
 - **48 barrios de CABA** — datos abiertos del Gobierno de la Ciudad.
-- **38 partidos con servicio + 5 de contexto** — IGN (WFS de departamentos).
+- **37 partidos con servicio + 5 de contexto** — IGN (WFS de departamentos).
+
+Los bordes se simplifican con una tolerancia de 0,0001° (~11 m), así que
+coinciden con los límites oficiales incluso con mucho zoom.
 
 El centroide geométrico de San Fernando y Tigre cae en las islas del Delta, y
 el de La Plata en su sur rural; para esos partidos el punto de referencia es la
