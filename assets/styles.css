@@ -376,6 +376,21 @@ button, input { font: inherit; color: inherit; }
 
 .field--money input { padding-left: 22px; text-align: right; }
 
+.tarifa__fija {
+  text-align: center;
+  font-size: 10.5px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+.origen-chip em {
+  display: block;
+  margin-top: 1px;
+  font-size: 10.5px;
+  font-style: normal;
+  color: var(--ink-3);
+}
+
 .field--money::before {
   content: "$";
   position: absolute;
@@ -430,11 +445,15 @@ button, input { font: inherit; color: inherit; }
 .toggle-row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 .hint {
-  margin: 11px 0 0;
+  margin: 13px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
   font-size: 11px;
   line-height: 1.5;
   color: var(--ink-3);
 }
+
+.hint b { color: var(--ink-2); font-weight: 500; }
 
 /* ───────────── Resultado ───────────── */
 

@@ -1,9 +1,12 @@
 /* ProCourrier · Cotizador de envíos AMBA
    ---------------------------------------------------------------------------
-   El usuario ubica el depósito y la app pinta 4 tarifas concéntricas: la 1 es
-   la más cercana y el precio sube a medida que se aleja. Cada barrio de CABA y
-   cada partido del GBA queda asignado a una tarifa según la distancia a su
-   punto representativo.
+   El vendedor ubica su depósito y el mapa pinta las 4 tarifas: la 1 es la más
+   cercana y el precio sube a medida que el envío se aleja.
+
+   Los cortes de distancia salen de la facturación real: con 9,5 / 21,5 / 43,5 km
+   en línea recta, el modelo reproduce el 91,5% de 62.933 envíos ya cobrados.
+   Dos reglas de negocio se aplican antes que la distancia: la zona del propio
+   depósito siempre es T1, y para un depósito en CABA toda CABA es T1.
    ------------------------------------------------------------------------- */
 
 'use strict';
@@ -11,16 +14,18 @@
 /* ─────────────────────────── Configuración ─────────────────────────── */
 
 const COLORS = ['#ffd166', '#f79a3e', '#e4572e', '#a4243b'];
+const GRIS_SIN_RED = '#9aa7ba';
 
+// La tarifa 4 no tiene radio: es todo el resto de la red de cobertura.
 const TARIFAS_DEFAULT = [
-  { km: 8,  precio: 3500 },
-  { km: 18, precio: 4800 },
-  { km: 30, precio: 6200 },
-  { km: 50, precio: 8500 },
+  { km: 9.5,  precio: 4490 },
+  { km: 21.5, precio: 6490 },
+  { km: 43.5, precio: 8690 },
+  { km: null, precio: 9990 },
 ];
 
 const AMBA_BOUNDS = L.latLngBounds([-35.45, -59.75], [-33.95, -57.80]);
-const STORE_KEY = 'procourrier.cotizador.v1';
+const STORE_KEY = 'procourrier.cotizador.v2';
 
 const money = new Intl.NumberFormat('es-AR', {
   style: 'currency', currency: 'ARS', maximumFractionDigits: 0,
@@ -30,12 +35,11 @@ const km1 = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 });
 /* ─────────────────────────── Estado ─────────────────────────── */
 
 const state = {
-  origen: null,          // { lat, lon, label }
-  destino: null,         // { lat, lon, label }
+  origen: null,          // { lat, lon, label, zona }
+  destino: null,         // { lat, lon, label, zona }
   tarifas: TARIFAS_DEFAULT.map(t => ({ ...t })),
-  factor: 1.30,
   vista: 'ambas',
-  geo: null,             // FeatureCollection AMBA
+  geo: null,
   picking: false,
 };
 
@@ -46,18 +50,13 @@ const $$ = sel => Array.from(document.querySelectorAll(sel));
 
 const R_TIERRA = 6371; // km
 
-function haversine(a, b) {
+function distancia(a, b) {
   const rad = Math.PI / 180;
   const dLat = (b.lat - a.lat) * rad;
   const dLon = (b.lon - a.lon) * rad;
   const s = Math.sin(dLat / 2) ** 2 +
             Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
   return 2 * R_TIERRA * Math.asin(Math.sqrt(s));
-}
-
-/** Distancia "de calle" aproximada: línea recta por el factor de recorrido. */
-function distanciaRuta(a, b) {
-  return haversine(a, b) * state.factor;
 }
 
 /** Punto a `dist` km del centro con un rumbo dado, sobre la esfera. */
@@ -74,7 +73,6 @@ function destino(centro, distKm, rumboDeg) {
   return [lat2 / rad, lon2 / rad];
 }
 
-/** Anillo de puntos (lat,lng) que aproxima un círculo geodésico. */
 function anillo(centro, radioKm, pasos = 128) {
   const pts = [];
   for (let i = 0; i <= pasos; i++) pts.push(destino(centro, radioKm, (i * 360) / pasos));
@@ -98,50 +96,64 @@ function puntoEnFeature(punto, feature) {
     puntoEnAnillo(punto, poly[0]) && !poly.slice(1).some(h => puntoEnAnillo(punto, h)));
 }
 
+/** Zona del mapa que contiene un punto, o null si cae fuera. */
+function zonaDe(punto) {
+  if (!state.geo) return null;
+  return state.geo.features.find(f => puntoEnFeature(punto, f)) || null;
+}
+
 /* ─────────────────────────── Tarifas ─────────────────────────── */
 
-/** Devuelve el índice de tarifa (0-3) para una distancia, o -1 si queda afuera. */
-function tarifaPara(distKm) {
-  for (let i = 0; i < state.tarifas.length; i++) {
+const FUERA_DE_RED = -2;
+const SIN_ORIGEN = -1;
+
+/** Índice de tarifa (0-3) por distancia. La última no tiene tope. */
+function tarifaPorDistancia(distKm) {
+  for (let i = 0; i < state.tarifas.length - 1; i++) {
     if (distKm <= state.tarifas[i].km) return i;
   }
-  return -1;
+  return state.tarifas.length - 1;
 }
 
-function tarifaDePunto(punto) {
-  if (!state.origen) return { idx: -1, dist: 0 };
-  const dist = distanciaRuta(state.origen, punto);
-  return { idx: tarifaPara(dist), dist };
+/** Tarifa de una zona del mapa, con las reglas de negocio antes que la distancia. */
+function tarifaDeZona(feature) {
+  const p = feature.properties;
+  if (!p.enRed) return { idx: FUERA_DE_RED, dist: 0 };
+  if (!state.origen) return { idx: SIN_ORIGEN, dist: 0 };
+
+  const dist = distancia(state.origen, { lat: p.lat, lon: p.lon });
+  const o = state.origen.zona && state.origen.zona.properties;
+
+  if (o) {
+    // La zona del propio depósito, y toda CABA para un depósito porteño.
+    if (o.nombre === p.nombre) return { idx: 0, dist };
+    if (o.region === 'CABA' && p.region === 'CABA') return { idx: 0, dist };
+  }
+  return { idx: tarifaPorDistancia(dist), dist };
 }
 
+/** Los radios tienen que ser crecientes (la tarifa 4 no tiene radio). */
 function radiosValidos() {
-  return state.tarifas.every((t, i) => i === 0 || t.km > state.tarifas[i - 1].km);
+  return state.tarifas.slice(0, 3).every((t, i) => t.km > 0 && (i === 0 || t.km > state.tarifas[i - 1].km));
 }
 
 /* ─────────────────────────── Mapa ─────────────────────────── */
 
-const map = L.map('map', {
-  zoomControl: true,
-  attributionControl: true,
-  minZoom: 8,
-  maxZoom: 17,
-}).fitBounds(AMBA_BOUNDS);
+const map = L.map('map', { minZoom: 8, maxZoom: 17 }).fitBounds(AMBA_BOUNDS);
 
 const ESRI_ATTR = 'Tiles &copy; Esri &mdash; HERE, Garmin, &copy; OpenStreetMap contributors';
 
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-  attribution: ESRI_ATTR,
-  maxZoom: 16,
+  attribution: ESRI_ATTR, maxZoom: 16,
 }).addTo(map);
 
-// Los nombres de calles y localidades van en un panel por encima de los colores.
+// Los nombres de calles y localidades van por encima de los colores.
 map.createPane('etiquetas');
 map.getPane('etiquetas').style.zIndex = 450;
 map.getPane('etiquetas').style.pointerEvents = 'none';
 
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
-  pane: 'etiquetas',
-  maxZoom: 16,
+  pane: 'etiquetas', maxZoom: 16,
 }).addTo(map);
 
 const capaZonas   = L.layerGroup().addTo(map);
@@ -165,63 +177,60 @@ const iconoDestino = L.divIcon({ className: '', html: '<div class="pin-dest"></d
 function dibujarAnillos() {
   capaAnillos.clearLayers();
   capaTags.clearLayers();
-  if (!state.origen || !radiosValidos()) return;
+  if (!state.origen || !radiosValidos() || state.vista === 'zonas') return;
 
-  const mostrar = state.vista !== 'zonas';
+  const soloBorde = state.vista === 'ambas';
 
-  state.tarifas.forEach((t, i) => {
+  // Tres círculos: los de T1 a T3. La T4 es todo lo que queda de la red.
+  state.tarifas.slice(0, 3).forEach((t, i) => {
     const externo = anillo(state.origen, t.km);
     const interno = i === 0 ? null : anillo(state.origen, state.tarifas[i - 1].km).reverse();
-    const coords = interno ? [externo, interno] : [externo];
 
-    if (mostrar) {
-      const soloBorde = state.vista === 'ambas';
-      L.polygon(coords, {
-        color: COLORS[i],
-        weight: soloBorde ? 2.4 : 1.6,
-        opacity: .95,
-        dashArray: soloBorde ? '7 6' : null,
-        fillColor: COLORS[i],
-        fillOpacity: soloBorde ? .05 : .32,
-        interactive: false,
-      }).addTo(capaAnillos);
-    }
-
-    if (!mostrar) return;
-
-    // Etiqueta de precio en el medio del anillo, sobre una diagonal NE.
-    const desde = i === 0 ? 0 : state.tarifas[i - 1].km;
-    const medio = destino(state.origen, (desde + t.km) / 2, 70 - i * 26);
-    L.marker(medio, {
+    L.polygon(interno ? [externo, interno] : [externo], {
+      color: COLORS[i],
+      weight: soloBorde ? 2.4 : 1.6,
+      opacity: .95,
+      dashArray: soloBorde ? '7 6' : null,
+      fillColor: COLORS[i],
+      fillOpacity: soloBorde ? .05 : .32,
       interactive: false,
-      icon: L.divIcon({
-        className: '',
-        iconSize: [0, 0],
-        html: `<div class="ring-tag" style="background:${COLORS[i]}">T${i + 1} · ${money.format(t.precio)}</div>`,
-      }),
-    }).addTo(capaTags);
+    }).addTo(capaAnillos);
+
+    const desde = i === 0 ? 0 : state.tarifas[i - 1].km;
+    etiqueta(desde + (t.km - desde) * .62, 68 - i * 25, i, money.format(t.precio));
   });
+
+  // La T4 se rotula apenas afuera del último anillo.
+  etiqueta(state.tarifas[2].km * 1.3, -8, 3, money.format(state.tarifas[3].precio) + ' · resto de la red');
 }
 
-/* ── Choropleth de barrios y partidos ── */
+function etiqueta(radioKm, rumbo, i, texto) {
+  L.marker(destino(state.origen, radioKm, rumbo), {
+    interactive: false,
+    icon: L.divIcon({
+      className: '', iconSize: [0, 0],
+      html: `<div class="ring-tag" style="background:${COLORS[i]}">T${i + 1} · ${texto}</div>`,
+    }),
+  }).addTo(capaTags);
+}
+
+/* ── Barrios y partidos pintados ── */
 
 let capaGeo = null;
 
 function estiloFeature(feature) {
-  const p = feature.properties;
-  const { idx } = tarifaDePunto({ lat: p.lat, lon: p.lon });
+  const { idx } = tarifaDeZona(feature);
   const visible = state.vista !== 'anillos';
 
-  if (idx < 0) {
+  if (idx === FUERA_DE_RED || idx === SIN_ORIGEN) {
     return {
-      color: '#9aa7ba', weight: .7, opacity: visible ? .5 : 0,
-      fillColor: '#b8c2d0', fillOpacity: visible ? .18 : 0,
+      color: '#8d9bad', weight: .7, opacity: visible ? .55 : 0,
+      fillColor: GRIS_SIN_RED, fillOpacity: visible ? .2 : 0,
+      dashArray: idx === FUERA_DE_RED ? '3 3' : null,
     };
   }
   return {
-    color: '#ffffff',
-    weight: .9,
-    opacity: visible ? .85 : 0,
+    color: '#ffffff', weight: .9, opacity: visible ? .85 : 0,
     fillColor: COLORS[idx],
     fillOpacity: visible ? (state.vista === 'zonas' ? .62 : .55) : 0,
   };
@@ -229,12 +238,17 @@ function estiloFeature(feature) {
 
 function tooltipFeature(feature) {
   const p = feature.properties;
-  const { idx, dist } = tarifaDePunto({ lat: p.lat, lon: p.lon });
-  const zona = idx < 0
-    ? '<b style="color:#9aabc4">Fuera de cobertura</b>'
-    : `<b>Tarifa ${idx + 1} · ${money.format(state.tarifas[idx].precio)}</b>`;
+  const { idx, dist } = tarifaDeZona(feature);
   const donde = p.region === 'CABA' ? `CABA · Comuna ${p.comuna}` : `GBA · Cordón ${p.cordon}`;
+
+  if (idx === FUERA_DE_RED) {
+    return `<div><strong>${p.nombre}</strong><span>${donde}</span><br>
+            <b style="color:#9aabc4">Fuera de la red</b></div>`;
+  }
   const km = state.origen ? `<span>${km1.format(dist)} km del depósito</span><br>` : '';
+  const zona = idx === SIN_ORIGEN
+    ? '<span>Ubicá el depósito para ver el precio</span>'
+    : `<b>Tarifa ${idx + 1} · ${money.format(state.tarifas[idx].precio)}</b>`;
   return `<div><strong>${p.nombre}</strong><span>${donde}</span><br>${km}${zona}</div>`;
 }
 
@@ -271,7 +285,8 @@ function repintar() {
 /* ─────────────────────────── Origen y destino ─────────────────────────── */
 
 function setOrigen(lat, lon, label) {
-  state.origen = { lat, lon, label: label || `${lat.toFixed(5)}, ${lon.toFixed(5)}` };
+  const zona = zonaDe({ lat, lon });
+  state.origen = { lat, lon, zona, label: label || `${lat.toFixed(5)}, ${lon.toFixed(5)}` };
 
   if (!markerOrigen) {
     markerOrigen = L.marker([lat, lon], { icon: iconoDeposito, draggable: true, zIndexOffset: 800 })
@@ -288,6 +303,7 @@ function setOrigen(lat, lon, label) {
   $('#legend').hidden = false;
   $('#origen-chip').hidden = false;
   $('#origen-label').textContent = state.origen.label;
+  $('#origen-zona').textContent = zona ? zona.properties.nombre : 'fuera del mapa de zonas';
   $('#input-destino').disabled = false;
   $('#btn-export').disabled = false;
 
@@ -296,13 +312,12 @@ function setOrigen(lat, lon, label) {
 }
 
 function ajustarVista() {
-  const rMax = state.tarifas[state.tarifas.length - 1].km;
-  const bounds = L.latLngBounds(anillo(state.origen, rMax, 32));
+  const bounds = L.latLngBounds(anillo(state.origen, state.tarifas[2].km * 1.35, 32));
   map.fitBounds(bounds, { padding: [40, 40], animate: true });
 }
 
 function setDestino(lat, lon, label) {
-  state.destino = { lat, lon, label };
+  state.destino = { lat, lon, label, zona: zonaDe({ lat, lon }) };
   if (!markerDestino) {
     markerDestino = L.marker([lat, lon], { icon: iconoDestino, zIndexOffset: 700 }).addTo(capaPins);
   } else {
@@ -315,26 +330,23 @@ function recotizar() {
   const box = $('#quote');
   if (!state.destino || !state.origen) { box.hidden = true; return; }
 
-  const { dist } = tarifaDePunto(state.destino);
-  const zona = state.geo && state.geo.features.find(f => puntoEnFeature(state.destino, f));
+  // La dirección paga lo que paga su barrio o partido: dos envíos a la misma
+  // localidad no pueden salir distinto por unas cuadras.
+  const zona = state.destino.zona;
+  const { idx, dist } = zona
+    ? tarifaDeZona(zona)
+    : { idx: FUERA_DE_RED, dist: distancia(state.origen, state.destino) };
 
-  // Si la dirección cae en un barrio o partido conocido, manda el color del mapa:
-  // así dos envíos al mismo barrio nunca salen distinto por unos metros.
-  const idx = zona
-    ? tarifaDePunto({ lat: zona.properties.lat, lon: zona.properties.lon }).idx
-    : tarifaPara(dist);
-
-  const donde = zona
-    ? `${zona.properties.nombre} · ${zona.properties.region}`
-    : `${state.destino.label} · fuera del mapa de zonas`;
-
+  const afuera = idx === FUERA_DE_RED;
   box.hidden = false;
-  box.classList.toggle('is-out', idx < 0);
-  $('#quote-km').textContent = `${km1.format(dist)} km`;
-  $('#quote-where').textContent = donde;
+  box.classList.toggle('is-out', afuera);
+  $('#quote-km').textContent = `${km1.format(dist || distancia(state.origen, state.destino))} km`;
+  $('#quote-where').textContent = zona
+    ? `${zona.properties.nombre} · ${zona.properties.region}`
+    : `${state.destino.label} · fuera del área de cobertura`;
 
-  if (idx < 0) {
-    $('#quote-badge').textContent = 'Fuera de cobertura';
+  if (afuera) {
+    $('#quote-badge').textContent = 'Sin cobertura';
     $('#quote-badge').style.background = '';
     $('#quote-price').textContent = 'A convenir';
   } else {
@@ -368,11 +380,7 @@ function conectarBuscador({ input, lista, clear, onPick }) {
   let ultimaBusqueda = '';
 
   const cerrar = () => { lista.hidden = true; lista.innerHTML = ''; };
-
-  const mensaje = txt => {
-    lista.innerHTML = `<li class="is-msg">${txt}</li>`;
-    lista.hidden = false;
-  };
+  const mensaje = txt => { lista.innerHTML = `<li class="is-msg">${txt}</li>`; lista.hidden = false; };
 
   input.addEventListener('input', () => {
     clear.hidden = !input.value;
@@ -406,10 +414,7 @@ function conectarBuscador({ input, lista, clear, onPick }) {
   });
 
   clear.addEventListener('click', () => {
-    input.value = '';
-    clear.hidden = true;
-    cerrar();
-    input.focus();
+    input.value = ''; clear.hidden = true; cerrar(); input.focus();
   });
 
   input.addEventListener('blur', () => setTimeout(cerrar, 180));
@@ -422,23 +427,27 @@ function renderTarifas() {
   cont.innerHTML = '';
 
   state.tarifas.forEach((t, i) => {
+    const ultima = t.km === null;
     const desde = i === 0 ? 0 : state.tarifas[i - 1].km;
+    const rango = ultima ? 'resto de la red' : `${desde} a ${t.km} km`;
+
     const fila = document.createElement('div');
     fila.className = 'tarifa';
     fila.innerHTML = `
       <div class="tarifa__name">
         <span class="tarifa__swatch" style="background:${COLORS[i]}"></span>
-        <span>Tarifa ${i + 1}<em class="tarifa__range" data-range="${i}">${desde} a ${t.km} km</em></span>
+        <span>Tarifa ${i + 1}<em class="tarifa__range" data-range="${i}">${rango}</em></span>
       </div>
-      <div class="field"><input type="number" data-km="${i}" value="${t.km}" min="0.5" step="0.5"></div>
-      <div class="field field--money"><input type="number" data-precio="${i}" value="${t.precio}" min="0" step="100"></div>`;
+      ${ultima
+        ? '<div class="tarifa__fija">sin tope</div>'
+        : `<div class="field"><input type="number" data-km="${i}" value="${t.km}" min="0.5" step="0.5" aria-label="Radio de la tarifa ${i + 1}"></div>`}
+      <div class="field field--money"><input type="number" data-precio="${i}" value="${t.precio}" min="0" step="100" aria-label="Precio de la tarifa ${i + 1}"></div>`;
     cont.appendChild(fila);
   });
 
   cont.querySelectorAll('input[data-km]').forEach(inp => {
     inp.addEventListener('input', () => {
-      const i = +inp.dataset.km;
-      state.tarifas[i].km = parseFloat(inp.value) || 0;
+      state.tarifas[+inp.dataset.km].km = parseFloat(inp.value) || 0;
       marcarRadios();
       if (radiosValidos()) { actualizarRangos(); repintar(); }
     });
@@ -455,6 +464,7 @@ function renderTarifas() {
 function actualizarRangos() {
   $$('[data-range]').forEach(el => {
     const i = +el.dataset.range;
+    if (state.tarifas[i].km === null) return;
     const desde = i === 0 ? 0 : state.tarifas[i - 1].km;
     el.textContent = `${desde} a ${state.tarifas[i].km} km`;
   });
@@ -476,8 +486,9 @@ function renderLeyenda() {
   ul.innerHTML = '';
   state.tarifas.forEach((t, i) => {
     const desde = i === 0 ? 0 : state.tarifas[i - 1].km;
+    const rango = t.km === null ? `+${desde} km` : `${desde}–${t.km} km`;
     const li = document.createElement('li');
-    li.innerHTML = `<i style="background:${COLORS[i]}"></i><span>${desde}–${t.km} km</span><b>${money.format(t.precio)}</b>`;
+    li.innerHTML = `<i style="background:${COLORS[i]}"></i><span>${rango}</span><b>${money.format(t.precio)}</b>`;
     ul.appendChild(li);
   });
 }
@@ -488,13 +499,13 @@ function agruparCobertura() {
   if (!state.geo || !state.origen) return { grupos, fuera };
 
   state.geo.features.forEach(f => {
-    const p = f.properties;
-    const { idx, dist } = tarifaDePunto({ lat: p.lat, lon: p.lon });
-    const item = { nombre: p.nombre, region: p.region, dist };
-    if (idx < 0) fuera.push(item); else grupos[idx].push(item);
+    const { idx, dist } = tarifaDeZona(f);
+    const item = { nombre: f.properties.nombre, region: f.properties.region, dist };
+    if (idx === FUERA_DE_RED) fuera.push(item); else grupos[idx].push(item);
   });
 
   grupos.forEach(g => g.sort((a, b) => a.dist - b.dist));
+  fuera.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   return { grupos, fuera };
 }
 
@@ -503,27 +514,33 @@ function renderCobertura() {
   if (!state.origen) return;
 
   const { grupos, fuera } = agruparCobertura();
+  const abiertas = new Set($$('.cob-row.is-open').map(f => f.dataset.id));
   cont.innerHTML = '';
 
-  const fila = (color, titulo, items) => {
+  const fila = (id, color, titulo, items, vacio) => {
     const div = document.createElement('div');
-    div.className = 'cob-row';
+    div.className = 'cob-row' + (abiertas.has(id) ? ' is-open' : '');
+    div.dataset.id = id;
     div.innerHTML = `
-      <button class="cob-row__head" type="button">
+      <button class="cob-row__head" type="button" aria-expanded="${abiertas.has(id)}">
         <span class="cob-row__bar" style="background:${color}"></span>
         <span class="cob-row__name">${titulo}</span>
         <span class="cob-row__count">${items.length}</span>
         <svg class="cob-row__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
       </button>
-      <div class="cob-row__body">${items.length ? items.map(i => i.nombre).join(' · ') : 'Ninguna localidad cae en este rango.'}</div>`;
-    div.querySelector('.cob-row__head').addEventListener('click', () => div.classList.toggle('is-open'));
+      <div class="cob-row__body">${items.length ? items.map(i => i.nombre).join(' · ') : vacio}</div>`;
+    div.querySelector('.cob-row__head').addEventListener('click', e => {
+      div.classList.toggle('is-open');
+      e.currentTarget.setAttribute('aria-expanded', div.classList.contains('is-open'));
+    });
     cont.appendChild(div);
   };
 
   state.tarifas.forEach((t, i) => {
-    fila(COLORS[i], `Tarifa ${i + 1} · ${money.format(t.precio)}`, grupos[i]);
+    fila('t' + i, COLORS[i], `Tarifa ${i + 1} · ${money.format(t.precio)}`, grupos[i],
+         'Ninguna localidad cae en este rango.');
   });
-  fila('#8695ab', 'Fuera de cobertura', fuera);
+  fila('out', GRIS_SIN_RED, 'Fuera de la red', fuera, 'La red llega a todas las zonas del mapa.');
 }
 
 function exportarCSV() {
@@ -533,7 +550,7 @@ function exportarCSV() {
   grupos.forEach((g, i) => g.forEach(item => filas.push([
     item.nombre, item.region, `T${i + 1}`, state.tarifas[i].precio, km1.format(item.dist),
   ])));
-  fuera.forEach(item => filas.push([item.nombre, item.region, 'fuera', '', km1.format(item.dist)]));
+  fuera.forEach(item => filas.push([item.nombre, item.region, 'sin cobertura', '', '']));
 
   const csv = filas.map(f => f.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
   const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
@@ -559,17 +576,15 @@ function aviso(texto) {
 function guardar() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
-      origen: state.origen, tarifas: state.tarifas, factor: state.factor, vista: state.vista,
+      origen: state.origen && { lat: state.origen.lat, lon: state.origen.lon, label: state.origen.label },
+      tarifas: state.tarifas, vista: state.vista,
     }));
   } catch { /* modo privado: seguimos sin persistir */ }
 }
 
 function restaurar() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch { return null; }
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); }
+  catch { return null; }
 }
 
 /* ─────────────────────────── Arranque ─────────────────────────── */
@@ -608,21 +623,16 @@ async function init() {
   conectarVista();
   conectarPick();
 
-  $('#factor').addEventListener('input', e => {
-    state.factor = Math.min(2, Math.max(1, parseFloat(e.target.value) || 1));
-    repintar();
-  });
-
   $('#btn-export').addEventListener('click', exportarCSV);
 
   conectarBuscador({
     input: $('#input-origen'), lista: $('#suggest-origen'), clear: $('#clear-origen'),
-    onPick: (lat, lon, label) => setOrigen(lat, lon, label),
+    onPick: setOrigen,
   });
 
   conectarBuscador({
     input: $('#input-destino'), lista: $('#suggest-destino'), clear: $('#clear-destino'),
-    onPick: (lat, lon, label) => setDestino(lat, lon, label),
+    onPick: setDestino,
   });
 
   try {
@@ -639,14 +649,13 @@ async function init() {
       state.tarifas = prev.tarifas;
       renderTarifas();
     }
-    if (prev.factor) { state.factor = prev.factor; $('#factor').value = prev.factor; }
     if (prev.vista) {
       state.vista = prev.vista;
       $$('.segmented button').forEach(b => b.classList.toggle('is-active', b.dataset.view === prev.vista));
     }
     if (prev.origen) setOrigen(prev.origen.lat, prev.origen.lon, prev.origen.label);
-    else { renderLeyenda(); dibujarZonas(); }
   }
+  renderLeyenda();
 }
 
 init();

@@ -4,9 +4,6 @@ Cotizador por zonas para CABA y GBA. El vendedor ubica su depósito y el mapa
 pinta las **4 tarifas**: la Tarifa 1 es la más cercana y el precio sube a
 medida que el envío se aleja.
 
-> Estado: **borrador de diseño**. Los radios y precios cargados son de muestra
-> y están pensados para que los reemplaces con los números reales.
-
 ## Cómo correrlo
 
 El mapa de zonas se carga por `fetch`, así que hace falta un servidor local
@@ -19,42 +16,87 @@ python3 -m http.server 8000
 
 No hay build ni dependencias que instalar.
 
-## Qué hace
+## El modelo de precios
+
+Precios vigentes, iguales para toda la red:
+
+| Tarifa | Alcance | Precio |
+|---|---|---|
+| T1 | hasta 9,5 km | $ 4.490 |
+| T2 | 9,5 a 21,5 km | $ 6.490 |
+| T3 | 21,5 a 43,5 km | $ 8.690 |
+| T4 | todo el resto de la red | $ 9.990 |
+
+Dos reglas de negocio se aplican **antes** que la distancia:
+
+1. La zona del propio depósito es siempre Tarifa 1.
+2. Para un depósito en CABA, toda la Capital es Tarifa 1 (verificado sobre los
+   306 códigos postales porteños: el 100% se factura T1).
+
+Fuera de esas reglas, la tarifa sale de la distancia en línea recta entre el
+depósito y el punto de referencia de la zona de destino. Una dirección paga lo
+que paga su barrio o partido, para que dos envíos a la misma localidad no
+salgan distinto por unas cuadras.
+
+### De dónde salen los cortes
+
+Los radios están calibrados contra la facturación real (`TARIFAS_POR_CLIENTE_ZONADEST`
+cruzado con `CLIENTE_PARTIDO`): **reproducen el tramo cobrado en el 91,7% de
+62.933 envíos**. Los tramos son relativos al origen, lo que el dato confirma:
+el mismo CP se cobra distinto según de dónde salga el paquete (CP 1407 es T1
+desde CABA, T2 desde Lomas de Zamora y T3 desde Burzaco).
+
+Comparado zona por zona desde un depósito en CABA, el modelo acierta 36 de 42
+partidos. Las 6 diferencias conocidas:
+
+| Zona | Real | Modelo |
+|---|---|---|
+| Ituzaingó | T2 | T3 |
+| Escobar (y Garín, Ing. Maschwitz) | T4 | T3 |
+| Guernica | T4 | T3 |
+| Marcos Paz | T4 | T3 |
+
+Son todas de borde: la red tiene excepciones puestas a mano que un corte por
+distancia no puede capturar. Para eliminarlas habría que usar la tabla real
+origen × zona donde existe, y la distancia sólo para depósitos nuevos.
+
+## Área de cobertura
+
+86 zonas con servicio: 48 barrios de CABA y 38 partidos del GBA. La red llega
+hasta **Luján, Dique Luján (Tigre), Zárate, Campana y La Plata** por el sur.
+
+La Matanza se divide en **Norte** y **Sur**, porque la red las cobra distinto
+(desde CABA, T2 y T3 respectivamente). El corte es la mediatriz entre San Justo
+y el sudoeste del partido.
+
+Brandsen, Exaltación de la Cruz, General Las Heras, Navarro y San Andrés de
+Giles se dibujan para dar contexto geográfico pero están marcados fuera de la
+red: nunca reciben precio.
+
+## Qué hace la app
 
 | | |
 |---|---|
 | **Depósito de origen** | Buscador de direcciones de CABA/GBA, click en el mapa o arrastrar el marcador. |
-| **Las 4 tarifas** | Radio (km) y precio de cada una, editables. El mapa se repinta al instante. |
+| **Las 4 tarifas** | Radios de T1 a T3 y los 4 precios, editables. El mapa se repinta al instante. |
 | **Cotizar un envío** | Dirección de destino → tarifa, precio y distancia. |
-| **Cobertura por tarifa** | Qué barrios y partidos cae en cada zona, con exportación a CSV. |
+| **Cobertura por tarifa** | Qué barrios y partidos caen en cada zona, con exportación a CSV. |
 | **Vistas** | `Anillos` (distancia pura), `Zonas` (barrios y partidos pintados) o `Ambas`. |
 
 Lo último configurado queda guardado en el navegador (`localStorage`).
 
-## Cómo se calcula el precio
-
-1. Se mide la distancia en línea recta entre el depósito y el destino.
-2. Se multiplica por el **factor de recorrido** (1,30 por defecto) para
-   aproximar los km reales de calle, que siempre son más que la línea recta.
-3. Esa distancia cae en una de las 4 tarifas. Si supera el radio de la
-   Tarifa 4, el envío queda **fuera de cobertura**.
-
-**Una dirección paga lo que paga su barrio.** Cuando el destino cae dentro de
-un barrio de CABA o un partido del GBA, la tarifa sale del color de esa zona en
-el mapa (calculado sobre el punto representativo del polígono) y no de los
-metros exactos de la dirección. Así dos envíos a la misma localidad nunca salen
-distinto por estar a unas cuadras uno del otro.
-
 ## Datos geográficos
 
-`data/amba.geojson` (~94 KB) trae 90 polígonos simplificados:
+`data/amba.geojson` (~94 KB, 91 polígonos simplificados):
 
 - **48 barrios de CABA** — datos abiertos del Gobierno de la Ciudad.
-- **42 partidos del GBA** — IGN (WFS de departamentos), primer, segundo y
-  tercer cordón, cada uno etiquetado con su `cordon`.
+- **38 partidos con servicio + 5 de contexto** — IGN (WFS de departamentos).
 
-Para regenerarlo o cambiar qué partidos entran, editá el diccionario `CORDON`
-en `scripts/build_geo.py` y corré el script (necesita `shapely`).
+El centroide geométrico de San Fernando y Tigre cae en las islas del Delta, y
+el de La Plata en su sur rural; para esos partidos el punto de referencia es la
+cabecera, que es donde se reparte.
+
+Para regenerarlo, editá `scripts/build_geo.py` y corrélo (necesita `shapely`).
 
 ## Servicios externos
 
@@ -70,6 +112,6 @@ en `scripts/build_geo.py` y corré el script (necesita `shapely`).
 index.html            Estructura de la página
 assets/styles.css     Diseño
 assets/app.js         Mapa, tarifas y cotización
-data/amba.geojson     Barrios de CABA + partidos del GBA
+data/amba.geojson     Zonas de CABA y GBA
 scripts/build_geo.py  Genera el geojson desde las fuentes oficiales
 ```

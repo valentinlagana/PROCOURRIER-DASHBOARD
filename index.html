@@ -58,7 +58,7 @@
 
         <div class="origen-chip" id="origen-chip" hidden>
           <span class="dot"></span>
-          <span id="origen-label">—</span>
+          <span><span id="origen-label">—</span><em id="origen-zona"></em></span>
         </div>
       </section>
 
@@ -68,7 +68,7 @@
           <span class="step">2</span>
           <div>
             <h2>Las 4 tarifas</h2>
-            <p>Hasta cuántos km llega cada una y cuánto sale.</p>
+            <p>Hasta cuántos km llega cada una y cuánto sale. La 4 es todo el resto de la red.</p>
           </div>
         </div>
 
@@ -77,15 +77,10 @@
         </div>
         <div id="tarifas"></div>
 
-        <label class="toggle-row">
-          <span>
-            Factor de recorrido
-            <em title="Multiplica la distancia en línea recta para aproximar los km reales de calle.">?</em>
-          </span>
-          <input type="number" id="factor" value="1.30" min="1" max="2" step="0.05">
-        </label>
-
-        <p class="hint">Los valores son de muestra: cambiá radios y precios y el mapa se repinta al instante.</p>
+        <p class="hint">
+          Radios calibrados con <b>62.933 envíos ya facturados</b>: reproducen el tramo real
+          en el 91,5% de los casos. La distancia es en línea recta.
+        </p>
       </section>
 
       <!-- Paso 3 -->
@@ -135,7 +130,11 @@
         </button>
       </section>
 
-      <p class="foot">Borrador · distancias en línea recta ajustadas por el factor de recorrido.</p>
+      <p class="foot">
+        La red llega hasta Luján, Dique Luján, Zárate, Campana y La Plata.
+        La zona del propio depósito siempre es Tarifa 1, y para un depósito en CABA
+        toda la Capital es Tarifa 1.
+      </p>
     </div>
   </aside>
 
