@@ -1,0 +1,11 @@
+{
+  "name": "procourrier-cotizador",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build_geo.mjs"
+  },
+  "dependencies": {
+    "@turf/simplify": "^7.1.0"
+  }
+}
