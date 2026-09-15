@@ -110,22 +110,36 @@ origen × zona donde existe, y la distancia sólo para depósitos nuevos.
 
 ## Área de cobertura
 
-**311 zonas con servicio**: 48 barrios de CABA y 263 localidades y partidos del
-GBA. La red llega hasta Luján, Dique Luján, Zárate, Campana y La Plata.
+**47 zonas tarifarias**, las del mapa de cobertura de ProCourrier:
 
-El mapa está armado a nivel **localidad**, no partido: Garín, Del Viso, Don
-Torcuato, Benavídez, El Talar, Grand Bourg y Nordelta son zonas propias, igual
-que aparecen en Google Maps. Donde OpenStreetMap no tiene localidades mapeadas
-—Zárate, Campana, Luján, Vicente López, General Rodríguez— la zona es el
-partido entero.
+CABA · Zárate · Campana · Escobar · Garín · Ingeniero Maschwitz · Pilar ·
+Del Viso · Derqui · Villa Rosa · Tigre · Nordelta · San Fernando · San Isidro ·
+Vicente López · San Martín · Tres de Febrero · Malvinas Argentinas ·
+José C Paz · San Miguel · Moreno · General Rodríguez · Luján · Merlo ·
+Marcos Paz · Ituzaingó · Morón · Hurlingham · La Matanza Norte ·
+La Matanza Sur · Avellaneda · Lanús · Lomas de Zamora · Almirante Brown ·
+Esteban Echeverría · Ezeiza · Quilmes · Berazategui · Florencio Varela ·
+Guernica · San Vicente · Cañuelas · Ensenada · Berisso · La Plata Norte ·
+La Plata Centro · La Plata Oeste.
 
-**El Delta queda fuera de la red.** Primera, Segunda y Tercera Sección (las
-islas de Tigre y San Fernando) y la Isla Martín García son inaccesibles en
-vehículo: se dibujan en gris y nunca reciben precio.
+Una zona no es siempre un partido. Algunas son una localidad suelta porque la
+red las cobra aparte (Garín, Del Viso, Derqui, Villa Rosa, Ingeniero
+Maschwitz, Nordelta) y otras son un pedazo de partido: La Plata se divide en
+Norte, Centro y Oeste, y La Matanza en Norte y Sur.
 
-También quedan fuera, por no aparecer en la facturación: Brandsen, Exaltación
-de la Cruz (con Capilla del Señor, Los Cardales y Parada Orlando), General Las
-Heras, Navarro y San Andrés de Giles.
+### Lo que queda afuera
+
+**El Delta.** Primera, Segunda y Tercera Sección —las islas de Tigre y San
+Fernando— no se circulan en vehículo. Son 1.470 km² que el mapa marcaba como
+cubiertos y ahora van en gris.
+
+**Las islas de Zárate y Campana.** Los dos partidos cruzan el Paraná. El build
+resta el río (`data/agua.geojson`, del IGN) y se queda con la orilla donde
+está la ciudad: Zárate pasa de 1.188 a 567 km² y Campana de 989 a 334.
+
+**Cinco partidos sin servicio**, que se dibujan sólo para dar contexto:
+Brandsen, Exaltación de la Cruz (con Capilla del Señor, Los Cardales y Parada
+Orlando), General Las Heras, Navarro y San Andrés de Giles.
 
 ## Qué hace la app
 
@@ -142,7 +156,7 @@ Lo último configurado queda guardado en el navegador (`localStorage`).
 
 ## Datos geográficos
 
-`data/amba.geojson` (~457 KB, 331 polígonos):
+`data/amba.geojson` (~313 KB, 100 polígonos: 47 zonas tarifarias más las de contexto):
 
 - **48 barrios de CABA** — datos abiertos del Gobierno de la Ciudad.
 - **263 localidades y partidos del GBA** — límites de partido del IGN (WFS de
@@ -167,7 +181,8 @@ Para regenerarlo:
 python3 scripts/build_geo.py          # partidos y barrios -> data/partidos.geojson
 python3 scripts/fetch_localidades.py  # localidades desde OpenStreetMap
 npx osmtogeojson localidades_osm.json > localidades_raw.geojson
-python3 scripts/build_localidades.py  # las une -> data/amba.geojson
+python3 scripts/build_localidades.py  # las une -> data/localidades.geojson
+python3 scripts/build_zonas.py        # las agrupa en las 47 zonas tarifarias
 ```
 
 ## Servicios externos

@@ -286,7 +286,7 @@ function estiloFeature(feature) {
 function tooltipFeature(feature) {
   const p = feature.properties;
   const { idx, dist } = tarifaDeZona(feature);
-  const donde = p.region === 'CABA' ? `CABA · Comuna ${p.comuna}` : `Partido de ${p.partido}`;
+  const donde = p.region === 'CABA' ? `CABA · Comuna ${p.comuna}` : 'Gran Buenos Aires';
 
   if (idx === FUERA_DE_RED) {
     return `<div><strong>${p.nombre}</strong><span>${donde}</span><br>

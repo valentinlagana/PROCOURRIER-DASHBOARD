@@ -1,0 +1,147 @@
+# -*- coding: utf-8 -*-
+"""Arma data/amba.geojson con las zonas tarifarias reales de ProCourrier.
+
+Toma las localidades de build_localidades.py y las agrupa en las 47 zonas del
+mapa de cobertura: algunas son un partido entero, otras una sola localidad
+(Garín, Del Viso, Nordelta) y otras un pedazo de partido (La Plata Norte,
+Centro y Oeste; La Matanza Norte y Sur).
+
+El Delta queda fuera: no se circula en vehículo. Zárate y Campana se recortan
+a tierra firme restando el Paraná y quedándose con la parte donde está la
+ciudad, para no prometer las islas.
+"""
+import json, os
+from shapely.geometry import shape, mapping
+from shapely.ops import unary_union
+
+AQUI = os.path.dirname(__file__)
+DATA = os.path.join(AQUI, '..', 'data')
+
+TODO = '*'   # todas las localidades del partido
+
+# Cada zona del mapa de cobertura: partido -> localidades que la forman.
+ZONAS = [
+    ('Zárate',              'Zárate',               TODO),
+    ('Campana',             'Campana',              TODO),
+    ('Escobar',             'Escobar',              ['Belén de Escobar','Escobar','El Cazador','Loma Verde','Maquinista Savio','Matheu']),
+    ('Garín',               'Escobar',              ['Garín']),
+    ('Ingeniero Maschwitz', 'Escobar',              ['Ingeniero Maschwitz']),
+    ('Pilar',               'Pilar',                ['Pilar','Pilar Sur','Champagnat','Fátima','La Lonja','Lagomarsino','Manuel Alberti','Manzanares','Manzone','San Francisco','Villa Astolfi','Zelaya']),
+    ('Del Viso',            'Pilar',                ['Del Viso']),
+    ('Derqui',              'Pilar',                ['Presidente Derqui']),
+    ('Villa Rosa',          'Pilar',                ['Villa Rosa']),
+    ('Tigre',               'Tigre',                ['Tigre','Benavídez','Dique Luján','Don Torcuato','El Talar','General Pacheco','Ricardo Rojas','Rincón de Milberg','Troncos del Talar']),
+    ('Nordelta',            'Tigre',                ['Nordelta']),
+    ('San Fernando',        'San Fernando',         ['San Fernando','Victoria','Virreyes']),
+    ('San Isidro',          'San Isidro',           TODO),
+    ('Vicente López',       'Vicente López',        TODO),
+    ('San Martín',          'General San Martín',   TODO),
+    ('Tres de Febrero',     'Tres de Febrero',      TODO),
+    ('Malvinas Argentinas', 'Malvinas Argentinas',  TODO),
+    ('José C Paz',          'José C. Paz',          TODO),
+    ('San Miguel',          'San Miguel',           TODO),
+    ('Moreno',              'Moreno',               TODO),
+    ('General Rodríguez',   'General Rodríguez',    TODO),
+    ('Luján',               'Luján',                TODO),
+    ('Merlo',               'Merlo',                TODO),
+    ('Marcos Paz',          'Marcos Paz',           TODO),
+    ('Ituzaingó',           'Ituzaingó',            TODO),
+    ('Morón',               'Morón',                TODO),
+    ('Hurlingham',          'Hurlingham',           TODO),
+    ('La Matanza Norte',    'La Matanza',           ['San Justo','Ramos Mejía','Villa Luzuriaga','Lomas del Mirador','La Tablada','Tapiales','Aldo Bonzi','Villa Madero','Villa Celina','Ciudad Evita']),
+    ('La Matanza Sur',      'La Matanza',           ['Isidro Casanova','Rafael Castillo','Gregorio de Laferrere','González Catán','Veinte de Junio','Virrey Del Pino']),
+    ('Avellaneda',          'Avellaneda',           TODO),
+    ('Lanús',               'Lanús',                TODO),
+    ('Lomas de Zamora',     'Lomas de Zamora',      TODO),
+    ('Almirante Brown',     'Almirante Brown',      TODO),
+    ('Esteban Echeverría',  'Esteban Echeverría',   TODO),
+    ('Ezeiza',              'Ezeiza',               TODO),
+    ('Quilmes',             'Quilmes',              TODO),
+    ('Berazategui',         'Berazategui',          TODO),
+    ('Florencio Varela',    'Florencio Varela',     TODO),
+    ('Guernica',            'Presidente Perón',     TODO),
+    ('San Vicente',         'San Vicente',          TODO),
+    ('Cañuelas',            'Cañuelas',             TODO),
+    ('Ensenada',            'Ensenada',             TODO),
+    ('Berisso',             'Berisso',              TODO),
+    ('La Plata Norte',      'La Plata',             ['Tolosa','Ringuelet','Manuel B. Gonnet','Joaquín Gorina','José Hernández','Villa Castells','City Bell','Villa Elisa','Arturo Seguí','El Rincón','Savoia','Los Porteños']),
+    ('La Plata Centro',     'La Plata',             ['La Plata','Altos de San Lorenzo','Los Hornos','San Carlos','Villa Elvira','Eduardo Arana','Villa Garibaldi - Parque Sicardi']),
+    ('La Plata Oeste',      'La Plata',             ['Melchor Romero','Lisandro Olmos','Abasto','Colonia Urquiza','Ángel Etcheverry','El Peligro','Malvinas Argentinas']),
+]
+
+# Zonas que se dibujan para dar contexto pero no tienen servicio.
+SIN_SERVICIO = [
+    ('Delta del Paraná', ['Primera Sección','Segunda Sección','Tercera Sección']),
+    ('Exaltación de la Cruz', None), ('Brandsen', None),
+    ('General Las Heras', None), ('Navarro', None), ('San Andrés de Giles', None),
+]
+
+# Zárate y Campana cruzan el Paraná; se recortan a la orilla de la ciudad.
+CABECERAS = {'Zárate': (-34.0958, -59.0289), 'Campana': (-34.1637, -58.9587)}
+
+def redondear(o, nd=5):
+    if isinstance(o, (list, tuple)): return [redondear(x, nd) for x in o]
+    if isinstance(o, float): return round(o, nd)
+    return o
+
+def tierra_firme(g, agua, cabecera):
+    """Saca el río y se queda con el pedazo donde está la ciudad."""
+    from shapely.geometry import Point
+    seco = g.difference(agua)
+    if seco.geom_type != 'MultiPolygon': return seco
+    p = Point(cabecera[1], cabecera[0])
+    tocan = [q for q in seco.geoms if q.contains(p)]
+    return tocan[0] if tocan else max(seco.geoms, key=lambda q: q.area)
+
+def main():
+    src = json.load(open(os.path.join(DATA, 'localidades.geojson'), encoding='utf-8'))
+    agua = shape(json.load(open(os.path.join(DATA, 'agua.geojson'), encoding='utf-8'))['features'][0]['geometry']).buffer(0)
+
+    porPartido = {}
+    caba = []
+    for f in src['features']:
+        p = f['properties']
+        if p['region'] == 'CABA': caba.append(f); continue
+        porPartido.setdefault(p['partido'], {})[p['nombre']] = f
+
+    feats, usadas = [], set()
+
+    def agregar(nombre, geoms, en_red, cordon):
+        g = unary_union([shape(x['geometry']).buffer(0) for x in geoms])
+        if nombre in CABECERAS: g = tierra_firme(g, agua, CABECERAS[nombre])
+        g = g.simplify(0.0002, preserve_topology=True)
+        r = g.representative_point()
+        feats.append({'type': 'Feature', 'geometry': redondear(mapping(g)),
+                      'properties': {'nombre': nombre, 'region': 'GBA', 'cordon': cordon,
+                                     'enRed': en_red, 'lat': round(r.y, 5), 'lon': round(r.x, 5)}})
+
+    for nombre, partido, cuales in ZONAS:
+        locs = porPartido.get(partido, {})
+        elegidas = list(locs.values()) if cuales == TODO else [locs[n] for n in cuales if n in locs]
+        faltan = [] if cuales == TODO else [n for n in cuales if n not in locs]
+        if faltan: print(f'  OJO {nombre}: no encontré {faltan}')
+        if not elegidas: print(f'  OJO {nombre}: sin geometría'); continue
+        for f in elegidas: usadas.add((partido, f['properties']['nombre']))
+        agregar(nombre, elegidas, True, elegidas[0]['properties']['cordon'])
+
+    for nombre, cuales in SIN_SERVICIO:
+        if cuales is None:
+            elegidas = list(porPartido.get(nombre, {}).values())
+        else:
+            elegidas = [f for locs in porPartido.values() for n, f in locs.items() if n in cuales]
+        if not elegidas: print(f'  OJO {nombre}: sin geometría'); continue
+        for f in elegidas: usadas.add((f['properties']['partido'], f['properties']['nombre']))
+        agregar(nombre, elegidas, False, 3)
+
+    # Lo que quedó sin asignar se avisa, para no perder territorio en silencio.
+    sueltas = [(p, n) for p, locs in porPartido.items() for n in locs if (p, n) not in usadas]
+    if sueltas: print(f'  sin asignar ({len(sueltas)}): {sueltas[:10]}')
+
+    feats += caba
+    ruta = os.path.join(DATA, 'amba.geojson')
+    json.dump({'type': 'FeatureCollection', 'features': feats},
+              open(ruta, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    red = sum(1 for f in feats if f['properties']['enRed'])
+    print(f'zonas: {len(feats)} | con servicio: {red} | {os.path.getsize(ruta)} bytes')
+
+main()
