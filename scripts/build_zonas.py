@@ -100,6 +100,12 @@ def solo_poligonos(g):
     partes = [q for q in getattr(g, 'geoms', []) if q.geom_type in ('Polygon', 'MultiPolygon')]
     return unary_union(partes) if partes else g
 
+def sin_astillas(g, minimo=0.02):
+    """Recortar contra tierra deja esquirlas de metros: no valen como zona."""
+    if g.geom_type != 'MultiPolygon': return g
+    grandes = [q for q in g.geoms if km2(q, q.centroid.y) >= minimo]
+    return unary_union(grandes) if grandes else max(g.geoms, key=lambda q: q.area)
+
 def km2(g, lat):
     import math
     return g.area * (111.32 ** 2) * math.cos(math.radians(lat))
@@ -137,7 +143,7 @@ def main():
                 islas.append(suelto)
                 print(f'  {nombre}: -{km2(suelto, g.centroid.y):.0f} km² de islas')
             g = solo_poligonos(firme)
-        g = solo_poligonos(g)
+        g = sin_astillas(solo_poligonos(g))
         if g.is_empty: print(f'  OJO {nombre}: quedó vacía'); return
         g = g.simplify(0.0002, preserve_topology=True)
         r = g.representative_point()

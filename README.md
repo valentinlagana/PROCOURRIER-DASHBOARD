@@ -135,14 +135,18 @@ cubiertos y ahora van en gris.
 
 **Todas las islas.** No sólo el Delta: el build recorta cada zona a tierra
 firme. Arma el continente restando la barrera del Delta —el Paraná de las
-Palmas, el Luján, el Río de la Plata y las tres Secciones, en
-`data/agua.geojson`— y se queda con la masa de tierra más grande; lo que caiga
-afuera pasa a dibujarse como Delta sin servicio.
+Palmas, el Río de la Plata y las tres Secciones, en `data/agua.geojson`— y se
+queda con la masa de tierra más grande; lo que caiga afuera pasa a dibujarse
+como Delta sin servicio.
+
+El Río Luján **no** va en la barrera: la franja entre el Luján y el Paraná de
+las Palmas (Dique Luján, Villa La Ñata, la costa de Tigre y San Fernando) es
+tierra firme y tiene reparto. Ponerlo la dejaba afuera por error.
 
 Hacía falta porque varias localidades de OpenStreetMap incluyen islas: la
 localidad San Fernando venía con 44 piezas y sólo 24 de sus 67 km² eran la
-ciudad. Después del recorte: San Fernando 22 km², Tigre 117, Escobar 177,
-Campana 332 y Zárate 564.
+ciudad. Después del recorte: San Fernando 24 km², Tigre 137, Escobar 259,
+Campana 368 y Zárate 564.
 
 **Cinco partidos sin servicio**, que se dibujan sólo para dar contexto:
 Brandsen, Exaltación de la Cruz (con Capilla del Señor, Los Cardales y Parada
@@ -163,7 +167,7 @@ Lo último configurado queda guardado en el navegador (`localStorage`).
 
 ## Datos geográficos
 
-`data/amba.geojson` (~366 KB, 100 polígonos: 47 zonas tarifarias más las de contexto):
+`data/amba.geojson` (~317 KB, 100 polígonos: 47 zonas tarifarias más las de contexto):
 
 - **48 barrios de CABA** — datos abiertos del Gobierno de la Ciudad.
 - **263 localidades y partidos del GBA** — límites de partido del IGN (WFS de
