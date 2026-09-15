@@ -133,9 +133,16 @@ Norte, Centro y Oeste, y La Matanza en Norte y Sur.
 Fernando— no se circulan en vehículo. Son 1.470 km² que el mapa marcaba como
 cubiertos y ahora van en gris.
 
-**Las islas de Zárate y Campana.** Los dos partidos cruzan el Paraná. El build
-resta el río (`data/agua.geojson`, del IGN) y se queda con la orilla donde
-está la ciudad: Zárate pasa de 1.188 a 567 km² y Campana de 989 a 334.
+**Todas las islas.** No sólo el Delta: el build recorta cada zona a tierra
+firme. Arma el continente restando la barrera del Delta —el Paraná de las
+Palmas, el Luján, el Río de la Plata y las tres Secciones, en
+`data/agua.geojson`— y se queda con la masa de tierra más grande; lo que caiga
+afuera pasa a dibujarse como Delta sin servicio.
+
+Hacía falta porque varias localidades de OpenStreetMap incluyen islas: la
+localidad San Fernando venía con 44 piezas y sólo 24 de sus 67 km² eran la
+ciudad. Después del recorte: San Fernando 22 km², Tigre 117, Escobar 177,
+Campana 332 y Zárate 564.
 
 **Cinco partidos sin servicio**, que se dibujan sólo para dar contexto:
 Brandsen, Exaltación de la Cruz (con Capilla del Señor, Los Cardales y Parada
@@ -156,7 +163,7 @@ Lo último configurado queda guardado en el navegador (`localStorage`).
 
 ## Datos geográficos
 
-`data/amba.geojson` (~313 KB, 100 polígonos: 47 zonas tarifarias más las de contexto):
+`data/amba.geojson` (~366 KB, 100 polígonos: 47 zonas tarifarias más las de contexto):
 
 - **48 barrios de CABA** — datos abiertos del Gobierno de la Ciudad.
 - **263 localidades y partidos del GBA** — límites de partido del IGN (WFS de

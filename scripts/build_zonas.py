@@ -76,26 +76,46 @@ SIN_SERVICIO = [
     ('General Las Heras', None), ('Navarro', None), ('San Andrés de Giles', None),
 ]
 
-# Zárate y Campana cruzan el Paraná; se recortan a la orilla de la ciudad.
-CABECERAS = {'Zárate': (-34.0958, -59.0289), 'Campana': (-34.1637, -58.9587)}
+# Cualquier pedazo de zona separado del continente por agua es una isla: no se
+# llega en vehículo. Se recorta todo contra tierra firme y las piezas que caen
+# se suman al Delta, para que el mapa las muestre marcadas como sin servicio.
+ISLA_MIN_KM2 = 0.5
 
 def redondear(o, nd=5):
     if isinstance(o, (list, tuple)): return [redondear(x, nd) for x in o]
     if isinstance(o, float): return round(o, nd)
     return o
 
-def tierra_firme(g, agua, cabecera):
-    """Saca el río y se queda con el pedazo donde está la ciudad."""
-    from shapely.geometry import Point
-    seco = g.difference(agua)
+def continente(zonas, barrera):
+    """Tierra firme: todo el territorio menos la barrera del Delta (el Paraná de
+    las Palmas, el Luján, el Río de la Plata y las tres Secciones), quedándose
+    con la masa más grande. Las islas quedan afuera por definición."""
+    seco = unary_union(zonas).buffer(0).difference(barrera)
     if seco.geom_type != 'MultiPolygon': return seco
-    p = Point(cabecera[1], cabecera[0])
-    tocan = [q for q in seco.geoms if q.contains(p)]
-    return tocan[0] if tocan else max(seco.geoms, key=lambda q: q.area)
+    return max(seco.geoms, key=lambda q: q.area)
+
+def solo_poligonos(g):
+    """Una intersección puede devolver líneas o puntos sueltos; se descartan."""
+    if g.geom_type in ('Polygon', 'MultiPolygon'): return g
+    partes = [q for q in getattr(g, 'geoms', []) if q.geom_type in ('Polygon', 'MultiPolygon')]
+    return unary_union(partes) if partes else g
+
+def km2(g, lat):
+    import math
+    return g.area * (111.32 ** 2) * math.cos(math.radians(lat))
 
 def main():
     src = json.load(open(os.path.join(DATA, 'localidades.geojson'), encoding='utf-8'))
     agua = shape(json.load(open(os.path.join(DATA, 'agua.geojson'), encoding='utf-8'))['features'][0]['geometry']).buffer(0)
+
+    todas = [shape(f['geometry']).buffer(0) for f in src['features'] if f['properties']['region'] == 'GBA']
+    # Las tres Secciones son el Delta propiamente dicho: cuentan como barrera,
+    # porque las islas de San Fernando quedan del otro lado de ellas.
+    secciones = unary_union([shape(f['geometry']).buffer(0) for f in src['features']
+                             if f['properties']['nombre'] in
+                             ('Primera Sección', 'Segunda Sección', 'Tercera Sección')])
+    barrera = unary_union([agua, secciones])
+    tierra = continente(todas, barrera)
 
     porPartido = {}
     caba = []
@@ -104,11 +124,21 @@ def main():
         if p['region'] == 'CABA': caba.append(f); continue
         porPartido.setdefault(p['partido'], {})[p['nombre']] = f
 
-    feats, usadas = [], set()
+    feats, usadas, islas = [], set(), []
 
     def agregar(nombre, geoms, en_red, cordon):
         g = unary_union([shape(x['geometry']).buffer(0) for x in geoms])
-        if nombre in CABECERAS: g = tierra_firme(g, agua, CABECERAS[nombre])
+        if en_red:
+            # La zona se queda con lo que está sobre tierra firme. Todo lo demás
+            # es isla del Delta y pasa a dibujarse como sin servicio.
+            firme = g.intersection(tierra)
+            suelto = g.difference(tierra).difference(agua)
+            if not suelto.is_empty and km2(suelto, g.centroid.y) > ISLA_MIN_KM2:
+                islas.append(suelto)
+                print(f'  {nombre}: -{km2(suelto, g.centroid.y):.0f} km² de islas')
+            g = solo_poligonos(firme)
+        g = solo_poligonos(g)
+        if g.is_empty: print(f'  OJO {nombre}: quedó vacía'); return
         g = g.simplify(0.0002, preserve_topology=True)
         r = g.representative_point()
         feats.append({'type': 'Feature', 'geometry': redondear(mapping(g)),
@@ -131,7 +161,8 @@ def main():
             elegidas = [f for locs in porPartido.values() for n, f in locs.items() if n in cuales]
         if not elegidas: print(f'  OJO {nombre}: sin geometría'); continue
         for f in elegidas: usadas.add((f['properties']['partido'], f['properties']['nombre']))
-        agregar(nombre, elegidas, False, 3)
+        extra = [{'geometry': mapping(unary_union(islas))}] if (nombre == 'Delta del Paraná' and islas) else []
+        agregar(nombre, elegidas + extra, False, 3)
 
     # Lo que quedó sin asignar se avisa, para no perder territorio en silencio.
     sueltas = [(p, n) for p, locs in porPartido.items() for n in locs if (p, n) not in usadas]
