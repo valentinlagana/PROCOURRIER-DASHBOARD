@@ -4,6 +4,17 @@ Cotizador por zonas para CABA y GBA. El vendedor ubica su depósito y el mapa
 pinta las **4 tarifas**: la Tarifa 1 es la más cercana y el precio sube a
 medida que el envío se aleja.
 
+## Un solo archivo
+
+```bash
+python3 scripts/build_html.py
+```
+
+Deja `dist/cotizador-procourrier.html`: un archivo de 883 KB con el mapa base y
+las zonas embebidos, que se abre con doble click y no necesita servidor ni
+internet. Sólo la tipografía se baja de Google Fonts, y si no hay red usa la
+del sistema.
+
 ## Cómo correrlo
 
 El mapa de zonas se carga por `fetch`, así que hace falta un servidor local
@@ -59,14 +70,21 @@ Tres reglas se aplican antes que la distancia:
    envíos a CABA, que es el destino más grande con 16.546 envíos.
 
 Fuera de esas reglas, la tarifa sale de la distancia en línea recta entre el
-depósito y el punto de referencia de la zona de destino. Una dirección paga lo
+depósito y el punto de referencia de la zona de destino. Ese punto es el centro
+de la **localidad cabecera**, no el centro geométrico del polígono: en partidos
+grandes el centro geométrico cae lejos de la ciudad y cambia el tramo. Con
+Quilmes la diferencia es 21,1 km contra 22,5, o sea T2 contra T3. La tabla está
+en `REFERENCIAS`, dentro de `scripts/build_zonas.py`. Una dirección paga lo
 que paga su barrio o partido, para que dos envíos a la misma localidad no
 salgan distinto por unas cuadras.
 
 ### Qué tan bien funciona
 
-Auditado localidad por localidad contra la facturación real (43 zonas de destino
-por 18 orígenes): **91,7% de 62.933 envíos quedan en el tramo correcto**.
+Auditado zona por zona contra la facturación real: **87,9% de 71.522 envíos
+quedan en el tramo correcto** eligiendo el depósito de la lista de zonas, que es
+como funciona la versión publicada. La versión del repo, que geocodifica la
+dirección exacta, llega al 91,7%: la diferencia es que ahí el origen es el punto
+del depósito y no la cabecera de su zona.
 
 Los radios 9,5 / 21,5 / 43,5 km son el techo de lo que puede dar un modelo por
 distancia: una búsqueda exhaustiva con paso de 0,1 km llega a 92,3% y ese medio

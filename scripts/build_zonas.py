@@ -10,7 +10,7 @@ El Delta queda fuera: no se circula en vehículo. Zárate y Campana se recortan
 a tierra firme restando el Paraná y quedándose con la parte donde está la
 ciudad, para no prometer las islas.
 """
-import json, os
+import json, os, unicodedata
 from shapely.geometry import shape, mapping
 from shapely.ops import unary_union
 
@@ -81,6 +81,61 @@ SIN_SERVICIO = [
 # se suman al Delta, para que el mapa las muestre marcadas como sin servicio.
 ISLA_MIN_KM2 = 0.5
 
+# Punto de referencia de cada zona: el centro de su localidad cabecera, que es
+# donde se concentra el reparto. No se usa el centro geométrico del polígono
+# porque en partidos grandes cae lejos de la ciudad y cambia la tarifa.
+REFERENCIAS = {
+    "Almirante Brown": (-34.84043, -58.37078),
+    "Avellaneda": (-34.67969, -58.33639),
+    "Berazategui": (-34.84387, -58.14115),
+    "Berisso": (-34.89825, -57.85219),
+    "Campana": (-34.16366, -58.95868),
+    "Cañuelas": (-35.14725, -58.69107),
+    "Del Viso": (-34.45346, -58.79656),
+    "Derqui": (-34.49099, -58.83846),
+    "Ensenada": (-34.85336, -57.96544),
+    "Escobar": (-34.32906, -58.78073),
+    "Esteban Echeverría": (-34.82162, -58.47478),
+    "Ezeiza": (-34.8751, -58.57387),
+    "Florencio Varela": (-34.88163, -58.25268),
+    "Garín": (-34.42869, -58.73592),
+    "General Rodríguez": (-34.63928, -58.99347),
+    "Guernica": (-34.94033, -58.41204),
+    "Hurlingham": (-34.59849, -58.65324),
+    "Ingeniero Maschwitz": (-34.38295, -58.73637),
+    "Ituzaingó": (-34.66039, -58.67952),
+    "José C Paz": (-34.50494, -58.77919),
+    "La Matanza Norte": (-34.67742, -58.56078),
+    "La Matanza Sur": (-34.83272, -58.70109),
+    "La Plata Centro": (-34.92068, -57.95376),
+    "La Plata Norte": (-34.87774, -58.05822),
+    "La Plata Oeste": (-34.94778, -58.04788),
+    "Lanús": (-34.70824, -58.39359),
+    "Lomas de Zamora": (-34.74998, -58.41018),
+    "Luján": (-34.58304, -59.14582),
+    "Malvinas Argentinas": (-34.48227, -58.72366),
+    "Marcos Paz": (-34.78651, -58.82968),
+    "Merlo": (-34.70708, -58.74747),
+    "Moreno": (-34.59273, -58.80609),
+    "Morón": (-34.64628, -58.61926),
+    "Nordelta": (-34.41548, -58.6487),
+    "Pilar": (-34.45709, -58.91416),
+    "Quilmes": (-34.75409, -58.28334),
+    "San Fernando": (-34.44719, -58.57015),
+    "San Isidro": (-34.4843, -58.53579),
+    "San Martín": (-34.5436, -58.57611),
+    "San Miguel": (-34.55438, -58.70386),
+    "San Vicente": (-35.02485, -58.42411),
+    "Tigre": (-34.42353, -58.58176),
+    "Tres de Febrero": (-34.60183, -58.5625),
+    "Vicente López": (-34.52899, -58.50636),
+    "Villa Rosa": (-34.40755, -58.87013),
+    "Zárate": (-34.0958, -59.0289),
+}
+
+def norm(s):
+    return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn').lower()
+
 def redondear(o, nd=5):
     if isinstance(o, (list, tuple)): return [redondear(x, nd) for x in o]
     if isinstance(o, float): return round(o, nd)
@@ -132,6 +187,14 @@ def main():
 
     feats, usadas, islas = [], set(), []
 
+    def punto(nombre, g):
+        """El precio lo define la cabecera, no el centro geométrico del polígono."""
+        from shapely.geometry import Point
+        if nombre in REFERENCIAS:
+            lat, lon = REFERENCIAS[nombre]
+            return Point(lon, lat)
+        return g.representative_point()
+
     def agregar(nombre, geoms, en_red, cordon):
         g = unary_union([shape(x['geometry']).buffer(0) for x in geoms])
         if en_red:
@@ -146,7 +209,7 @@ def main():
         g = sin_astillas(solo_poligonos(g))
         if g.is_empty: print(f'  OJO {nombre}: quedó vacía'); return
         g = g.simplify(0.0002, preserve_topology=True)
-        r = g.representative_point()
+        r = punto(nombre, g)
         feats.append({'type': 'Feature', 'geometry': redondear(mapping(g)),
                       'properties': {'nombre': nombre, 'region': 'GBA', 'cordon': cordon,
                                      'enRed': en_red, 'lat': round(r.y, 5), 'lon': round(r.x, 5)}})
