@@ -110,18 +110,22 @@ origen × zona donde existe, y la distancia sólo para depósitos nuevos.
 
 ## Área de cobertura
 
-85 zonas con servicio: 48 barrios de CABA y 37 partidos del GBA. La red llega
-hasta **Luján, Dique Luján (Tigre), Zárate, Campana y La Plata** por el sur.
+**311 zonas con servicio**: 48 barrios de CABA y 263 localidades y partidos del
+GBA. La red llega hasta Luján, Dique Luján, Zárate, Campana y La Plata.
 
-La red cobra distinto el norte y el sur de La Matanza (desde CABA, T2 y T3),
-pero el partido va entero: no existe un límite oficial entre ambas mitades y
-dibujar uno inventado daría un mapa que no corresponde con la realidad. Para
-separarlas hacen falta los límites de localidad, que ninguna fuente pública
-publica como polígono para el conurbano.
+El mapa está armado a nivel **localidad**, no partido: Garín, Del Viso, Don
+Torcuato, Benavídez, El Talar, Grand Bourg y Nordelta son zonas propias, igual
+que aparecen en Google Maps. Donde OpenStreetMap no tiene localidades mapeadas
+—Zárate, Campana, Luján, Vicente López, General Rodríguez— la zona es el
+partido entero.
 
-Brandsen, Exaltación de la Cruz, General Las Heras, Navarro y San Andrés de
-Giles se dibujan para dar contexto geográfico pero están marcados fuera de la
-red: nunca reciben precio.
+**El Delta queda fuera de la red.** Primera, Segunda y Tercera Sección (las
+islas de Tigre y San Fernando) y la Isla Martín García son inaccesibles en
+vehículo: se dibujan en gris y nunca reciben precio.
+
+También quedan fuera, por no aparecer en la facturación: Brandsen, Exaltación
+de la Cruz (con Capilla del Señor, Los Cardales y Parada Orlando), General Las
+Heras, Navarro y San Andrés de Giles.
 
 ## Qué hace la app
 
@@ -138,10 +142,12 @@ Lo último configurado queda guardado en el navegador (`localStorage`).
 
 ## Datos geográficos
 
-`data/amba.geojson` (~306 KB, 90 polígonos):
+`data/amba.geojson` (~457 KB, 331 polígonos):
 
 - **48 barrios de CABA** — datos abiertos del Gobierno de la Ciudad.
-- **37 partidos con servicio + 5 de contexto** — IGN (WFS de departamentos).
+- **263 localidades y partidos del GBA** — límites de partido del IGN (WFS de
+  departamentos) subdivididos con los límites de localidad de OpenStreetMap
+  (`admin_level=8`, el mismo nivel que rotula Google Maps).
 
 Los bordes se simplifican con una tolerancia de 0,0001° (~11 m), así que
 coinciden con los límites oficiales incluso con mucho zoom.
@@ -155,7 +161,14 @@ El centroide geométrico de San Fernando y Tigre cae en las islas del Delta, y
 el de La Plata en su sur rural; para esos partidos el punto de referencia es la
 cabecera, que es donde se reparte.
 
-Para regenerarlo, editá `scripts/build_geo.py` y corrélo (necesita `shapely`).
+Para regenerarlo:
+
+```bash
+python3 scripts/build_geo.py          # partidos y barrios -> data/partidos.geojson
+python3 scripts/fetch_localidades.py  # localidades desde OpenStreetMap
+npx osmtogeojson localidades_osm.json > localidades_raw.geojson
+python3 scripts/build_localidades.py  # las une -> data/amba.geojson
+```
 
 ## Servicios externos
 

@@ -860,7 +860,7 @@ const zonas = window.AMBA.features.map((f, i) => ({
   enRed: f.properties.enRed,
   detalle: f.properties.region === 'CABA'
     ? 'CABA · Comuna ' + f.properties.comuna
-    : 'GBA · ' + f.properties.cordon + '° cordón',
+    : 'Partido de ' + f.properties.partido,
   lat: f.properties.lat,
   lon: f.properties.lon,
   geom: f.geometry,
