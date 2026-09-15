@@ -663,7 +663,9 @@ button, input { font: inherit; color: inherit; }
           <p class="nota">
             Las zonas las define Mercado Envíos Flex, no ProCourrier. Estos radios
             son una estimación calibrada con 62.933 envíos facturados: aciertan el
-            tramo real en el 91,7% de los casos.
+            tramo real en el 92,8% de los casos, que es el techo de lo que puede
+            dar un modelo por distancia. Toda la Capital se cobra como una sola
+            zona, así que se mide al centro de CABA y no a cada barrio.
           </p>
           <div class="grilla-cab"><span></span><span>Hasta km</span><span></span></div>
           <div id="radios"></div>
@@ -866,6 +868,15 @@ const zonas = window.AMBA.features.map((f, i) => ({
 
 const enRed = zonas.filter(z => z.enRed);
 
+// La red cobra toda la Capital como una sola zona: verificado sobre los 306
+// códigos postales porteños, que reciben el mismo tramo desde cada origen.
+// Por eso la distancia a CABA se mide siempre a su centro, no a cada barrio.
+const BARRIOS = zonas.filter(z => z.region === 'CABA');
+const CABA_CENTRO = {
+  lat: BARRIOS.reduce((a, z) => a + z.lat, 0) / BARRIOS.length,
+  lon: BARRIOS.reduce((a, z) => a + z.lon, 0) / BARRIOS.length,
+};
+
 const NOMBRES = ['Zona domicilio', 'Zona cercana', 'Zona lejana', 'Zona muy lejana'];
 
 // Tarifario vigente desde el 01-09-2026. Factura A publica valores netos
@@ -943,7 +954,12 @@ function tarifaDeZona(z) {
   const o = estado.origen;
   if (o.nombre === z.nombre) return 0;
   if (o.region === 'CABA' && z.region === 'CABA') return 0;
-  return tarifaDe(distancia(o, z));
+  return tarifaDe(kmHasta(z));
+}
+
+/** Distancia que decide la tarifa. Para CABA es una sola, la del centro. */
+function kmHasta(z) {
+  return distancia(estado.origen, z.region === 'CABA' ? CABA_CENTRO : z);
 }
 
 const radiosOk = () => estado.radios
@@ -1241,7 +1257,7 @@ const globo = $('globo');
 
 function mostrarGlobo(z, ev) {
   const t = tarifaDeZona(z);
-  const km = un.format(distancia(estado.origen, z));
+  const km = un.format(kmHasta(z));
   globo.innerHTML = '<strong>' + z.nombre + '</strong><em>' + z.detalle + '</em><br>' +
     '<b style="color:' + (t === FUERA_DE_RED ? '#93a4bf' : COLORES[t]) + '">' +
     (t === FUERA_DE_RED ? 'Fuera de la red'
@@ -1335,7 +1351,7 @@ function pintarCotiz() {
   if (!estado.destino) { caja.hidden = true; return; }
   caja.hidden = false;
   const t = tarifaDeZona(estado.destino);
-  const km = distancia(estado.origen, estado.destino);
+  const km = kmHasta(estado.destino);
 
   caja.classList.toggle('afuera', t === FUERA_DE_RED);
   $('km').textContent = un.format(km) + ' km';
@@ -1357,7 +1373,7 @@ function agrupar() {
   const grupos = [[], [], [], []], afuera = [];
   zonas.forEach(z => {
     const t = tarifaDeZona(z);
-    const it = { nombre: z.nombre, region: z.region, km: distancia(estado.origen, z) };
+    const it = { nombre: z.nombre, region: z.region, km: kmHasta(z) };
     if (t === FUERA_DE_RED) afuera.push(it); else grupos[t].push(it);
   });
   grupos.forEach(g => g.sort((a, b) => a.km - b.km));

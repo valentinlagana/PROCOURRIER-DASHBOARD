@@ -376,6 +376,103 @@ button, input { font: inherit; color: inherit; }
 
 .field--money input { padding-left: 22px; text-align: right; }
 
+.campo-linea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.campo-linea input {
+  width: 96px;
+  padding: 8px 10px;
+  text-align: right;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.campo-linea input::-webkit-outer-spin-button,
+.campo-linea input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.opciones-fact {
+  display: flex;
+  gap: 3px;
+  margin-top: 11px;
+  padding: 3px;
+  border-radius: var(--radius-s);
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.opciones-fact button {
+  flex: 1;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.opciones-fact button.is-active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.escalon {
+  margin-top: 11px;
+  padding: 10px 12px;
+  border-radius: var(--radius-s);
+  background: rgba(0, 217, 178, .07);
+  border: 1px solid rgba(0, 217, 178, .22);
+}
+
+.escalon b { display: block; font-size: 12.5px; }
+.escalon span { display: block; margin-top: 2px; font-size: 11px; line-height: 1.45; color: var(--ink-2); }
+
+.tar {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.tar:last-child { border-bottom: 0; }
+
+.tar__swatch {
+  width: 12px; height: 12px; border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.14) inset;
+}
+
+.tar__name b { display: block; font-size: 12.5px; font-weight: 500; }
+.tar__name em { font-size: 10.5px; font-style: normal; color: var(--ink-3); }
+.tar__price { text-align: right; }
+.tar__price b {
+  display: block; font-size: 15px; font-weight: 700;
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+.tar__price em { font-size: 10px; font-style: normal; color: var(--ink-3); }
+
+.ajustes { margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line-soft); }
+.ajustes summary { font-size: 11.5px; color: var(--ink-3); cursor: pointer; list-style: none; }
+.ajustes summary::before { content: "▸ "; }
+.ajustes[open] summary::before { content: "▾ "; }
+.ajustes summary:hover { color: var(--ink-2); }
+.ajustes .hint { border-top: 0; padding-top: 8px; margin-top: 4px; }
+
 .tarifa__fija {
   text-align: center;
   font-size: 10.5px;

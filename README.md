@@ -46,16 +46,45 @@ Colecta bonificada desde 10 envíos diarios; por debajo, $6.000 + IVA por día.
 figuran en la liquidación de Mercado Libre. El mapa es una *estimación* de qué
 tarifa le va a tocar a cada barrio o partido, no la asignación oficial.
 
-Dos reglas de negocio se aplican antes que la distancia:
+Tres reglas se aplican antes que la distancia:
 
 1. La zona del propio depósito es siempre Tarifa 1.
 2. Para un depósito en CABA, toda la Capital es Tarifa 1 (verificado sobre los
    306 códigos postales porteños: el 100% se factura T1).
+3. **Toda CABA es una sola zona.** Los 306 códigos postales porteños reciben el
+   mismo tramo desde un mismo origen, sin una sola excepción en la facturación.
+   Por eso la distancia a la Capital se mide a su centro y no a cada barrio: de
+   otro modo el mapa la partía en dos o tres tarifas desde 25 de los 37 partidos.
+   Medida contra la facturación real, esta referencia acierta el 97% de los
+   envíos a CABA, que es el destino más grande con 16.546 envíos.
 
 Fuera de esas reglas, la tarifa sale de la distancia en línea recta entre el
 depósito y el punto de referencia de la zona de destino. Una dirección paga lo
 que paga su barrio o partido, para que dos envíos a la misma localidad no
 salgan distinto por unas cuadras.
+
+### Qué tan bien funciona
+
+Auditado localidad por localidad contra la facturación real (43 zonas de destino
+por 18 orígenes): **91,7% de 62.933 envíos quedan en el tramo correcto**.
+
+Los radios 9,5 / 21,5 / 43,5 km son el techo de lo que puede dar un modelo por
+distancia: una búsqueda exhaustiva con paso de 0,1 km llega a 92,3% y ese medio
+punto sale de casos que caen justo sobre un corte, así que es sobreajuste.
+
+El límite no es el modelo: **el 8,9% de las comparaciones contradice la
+distancia**. Zárate se cobra T4 desde CABA (68 km) y T3 desde Burzaco (90 km);
+Escobar es T4 desde CABA (44 km) y T3 desde Burzaco (66 km). Las zonas las
+define Mercado Envíos Flex, y no son una función de la distancia.
+
+Seis localidades fallan de forma sistemática:
+
+| Localidad | Real | Modelo | Por qué |
+|---|---|---|---|
+| Ituzaingó | T2 | T3 | está a 21,6 km de CABA, 100 m más que el corte |
+| Guernica, Marcos Paz | T4 | T3 | a 36-40 km de CABA, pero T3 desde orígenes más lejanos |
+| Del Viso, Derqui | T4 | T3 | ídem; además son localidades dentro de Pilar |
+| Ing. Maschwitz | T4 | T3 | ídem; es una localidad dentro de Escobar |
 
 ### De dónde salen los cortes
 

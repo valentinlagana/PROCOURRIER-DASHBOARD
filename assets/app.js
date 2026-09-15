@@ -16,13 +16,35 @@
 const COLORS = ['#ffd166', '#f79a3e', '#e4572e', '#a4243b'];
 const GRIS_SIN_RED = '#9aa7ba';
 
+const NOMBRES = ['Zona domicilio', 'Zona cercana', 'Zona lejana', 'Zona muy lejana'];
+
+// Tarifario vigente desde el 01-09-2026. Factura A publica valores netos
+// (el IVA se discrimina); sin factura, el valor ya es el final.
+const TARIFARIO = {
+  a: {
+    nombre: 'Factura A', neta: true,
+    pie: 'Valores netos. El IVA se discrimina en la factura, así que lo tomás como crédito fiscal y tu costo real es el neto.',
+    escalones: [
+      { netos: [4124, 5777, 7430, 8669], finales: [4990, 6990, 8990, 10490] },
+      { netos: [3917, 5488, 7058, 8240], finales: [4740, 6640, 8540, 9970] },
+      { netos: [3711, 5198, 6686, 7802], finales: [4490, 6290, 8090, 9440] },
+    ],
+  },
+  sf: {
+    nombre: 'Sin factura', neta: false,
+    pie: 'El valor de la tabla es el valor final por envío: no se le suma nada.',
+    escalones: [
+      { netos: [4590, 6430, 8270, 9650] },
+      { netos: [4340, 6080, 7820, 9130] },
+      { netos: [4090, 5730, 7370, 8600] },
+    ],
+  },
+};
+
+const ESCALONES = ['Hasta 200 envíos', 'Más de 200 envíos', 'Más de 300 envíos'];
+
 // La tarifa 4 no tiene radio: es todo el resto de la red de cobertura.
-const TARIFAS_DEFAULT = [
-  { km: 9.5,  precio: 4490 },
-  { km: 21.5, precio: 6490 },
-  { km: 43.5, precio: 8690 },
-  { km: null, precio: 9990 },
-];
+const RADIOS_DEFAULT = [9.5, 21.5, 43.5];
 
 const AMBA_BOUNDS = L.latLngBounds([-35.45, -59.75], [-33.95, -57.80]);
 const STORE_KEY = 'procourrier.cotizador.v2';
@@ -37,11 +59,18 @@ const km1 = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 });
 const state = {
   origen: null,          // { lat, lon, label, zona }
   destino: null,         // { lat, lon, label, zona }
-  tarifas: TARIFAS_DEFAULT.map(t => ({ ...t })),
+  radios: [...RADIOS_DEFAULT],
+  volumen: 150,
+  modalidad: 'a',
   vista: 'ambas',
   geo: null,
   picking: false,
 };
+
+const escalonIdx = () => state.volumen > 300 ? 2 : state.volumen > 200 ? 1 : 0;
+const fila = () => TARIFARIO[state.modalidad].escalones[escalonIdx()];
+const precio = i => fila().netos[i];
+const precioFinal = i => (fila().finales || fila().netos)[i];
 
 const $  = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
@@ -96,6 +125,24 @@ function puntoEnFeature(punto, feature) {
     puntoEnAnillo(punto, poly[0]) && !poly.slice(1).some(h => puntoEnAnillo(punto, h)));
 }
 
+/** Centro de CABA: la red cobra toda la Capital como una sola zona, verificado
+    sobre los 306 códigos postales porteños. */
+let cabaCentro = null;
+
+function calcularCentroCaba() {
+  const b = state.geo.features.filter(f => f.properties.region === 'CABA');
+  cabaCentro = {
+    lat: b.reduce((a, f) => a + f.properties.lat, 0) / b.length,
+    lon: b.reduce((a, f) => a + f.properties.lon, 0) / b.length,
+  };
+}
+
+/** Distancia que decide la tarifa. Para CABA es una sola, la del centro. */
+function kmHasta(p) {
+  const destino = p.region === 'CABA' && cabaCentro ? cabaCentro : { lat: p.lat, lon: p.lon };
+  return distancia(state.origen, destino);
+}
+
 /** Zona del mapa que contiene un punto, o null si cae fuera. */
 function zonaDe(punto) {
   if (!state.geo) return null;
@@ -109,10 +156,10 @@ const SIN_ORIGEN = -1;
 
 /** Índice de tarifa (0-3) por distancia. La última no tiene tope. */
 function tarifaPorDistancia(distKm) {
-  for (let i = 0; i < state.tarifas.length - 1; i++) {
-    if (distKm <= state.tarifas[i].km) return i;
+  for (let i = 0; i < state.radios.length; i++) {
+    if (distKm <= state.radios[i]) return i;
   }
-  return state.tarifas.length - 1;
+  return 3;
 }
 
 /** Tarifa de una zona del mapa, con las reglas de negocio antes que la distancia. */
@@ -121,7 +168,7 @@ function tarifaDeZona(feature) {
   if (!p.enRed) return { idx: FUERA_DE_RED, dist: 0 };
   if (!state.origen) return { idx: SIN_ORIGEN, dist: 0 };
 
-  const dist = distancia(state.origen, { lat: p.lat, lon: p.lon });
+  const dist = kmHasta(p);
   const o = state.origen.zona && state.origen.zona.properties;
 
   if (o) {
@@ -134,7 +181,7 @@ function tarifaDeZona(feature) {
 
 /** Los radios tienen que ser crecientes (la tarifa 4 no tiene radio). */
 function radiosValidos() {
-  return state.tarifas.slice(0, 3).every((t, i) => t.km > 0 && (i === 0 || t.km > state.tarifas[i - 1].km));
+  return state.radios.every((r, i) => r > 0 && (i === 0 || r > state.radios[i - 1]));
 }
 
 /* ─────────────────────────── Mapa ─────────────────────────── */
@@ -182,9 +229,9 @@ function dibujarAnillos() {
   const soloBorde = state.vista === 'ambas';
 
   // Tres círculos: los de T1 a T3. La T4 es todo lo que queda de la red.
-  state.tarifas.slice(0, 3).forEach((t, i) => {
-    const externo = anillo(state.origen, t.km);
-    const interno = i === 0 ? null : anillo(state.origen, state.tarifas[i - 1].km).reverse();
+  state.radios.forEach((r, i) => {
+    const externo = anillo(state.origen, r);
+    const interno = i === 0 ? null : anillo(state.origen, state.radios[i - 1]).reverse();
 
     L.polygon(interno ? [externo, interno] : [externo], {
       color: COLORS[i],
@@ -196,12 +243,12 @@ function dibujarAnillos() {
       interactive: false,
     }).addTo(capaAnillos);
 
-    const desde = i === 0 ? 0 : state.tarifas[i - 1].km;
-    etiqueta(desde + (t.km - desde) * .62, 68 - i * 25, i, money.format(t.precio));
+    const desde = i === 0 ? 0 : state.radios[i - 1];
+    etiqueta(desde + (r - desde) * .62, 68 - i * 25, i, money.format(precio(i)));
   });
 
   // La T4 se rotula apenas afuera del último anillo.
-  etiqueta(state.tarifas[2].km * 1.3, -8, 3, money.format(state.tarifas[3].precio) + ' · resto de la red');
+  etiqueta(state.radios[2] * 1.3, -8, 3, money.format(precio(3)) + ' · resto de la red');
 }
 
 function etiqueta(radioKm, rumbo, i, texto) {
@@ -248,7 +295,7 @@ function tooltipFeature(feature) {
   const km = state.origen ? `<span>${km1.format(dist)} km del depósito</span><br>` : '';
   const zona = idx === SIN_ORIGEN
     ? '<span>Ubicá el depósito para ver el precio</span>'
-    : `<b>Tarifa ${idx + 1} · ${money.format(state.tarifas[idx].precio)}</b>`;
+    : `<b>Tarifa ${idx + 1} · ${money.format(precio(idx))}</b>`;
   return `<div><strong>${p.nombre}</strong><span>${donde}</span><br>${km}${zona}</div>`;
 }
 
@@ -276,6 +323,8 @@ function dibujarZonas() {
 function repintar() {
   dibujarAnillos();
   if (capaGeo) capaGeo.setStyle(estiloFeature);
+  renderOperacion();
+  renderTarifas();
   renderLeyenda();
   renderCobertura();
   recotizar();
@@ -312,7 +361,7 @@ function setOrigen(lat, lon, label) {
 }
 
 function ajustarVista() {
-  const bounds = L.latLngBounds(anillo(state.origen, state.tarifas[2].km * 1.35, 32));
+  const bounds = L.latLngBounds(anillo(state.origen, state.radios[2] * 1.35, 32));
   map.fitBounds(bounds, { padding: [40, 40], animate: true });
 }
 
@@ -352,7 +401,7 @@ function recotizar() {
   } else {
     $('#quote-badge').textContent = `Tarifa ${idx + 1}`;
     $('#quote-badge').style.background = COLORS[idx];
-    $('#quote-price').textContent = money.format(state.tarifas[idx].precio);
+    $('#quote-price').textContent = money.format(precio(idx));
   }
 }
 
@@ -422,59 +471,64 @@ function conectarBuscador({ input, lista, clear, onPick }) {
 
 /* ─────────────────────────── UI: tarifas ─────────────────────────── */
 
+function renderOperacion() {
+  const t = TARIFARIO[state.modalidad];
+  const i = escalonIdx();
+  const ahorro = t.escalones[0].netos[0] - precio(0);
+  $('#escalon').innerHTML = `<b>${ESCALONES[i]}</b><span>${ahorro > 0
+    ? `Ahorrás ${money.format(ahorro)} por envío contra el primer escalón.`
+    : 'Desde 201 envíos por semana el valor baja solo, sin avisar nada.'}</span>`;
+  $('#sub-tarifas').textContent = `${t.nombre} · ${ESCALONES[i].toLowerCase()} por semana.`;
+  $('#nota-fact').textContent = t.pie;
+}
+
 function renderTarifas() {
-  const cont = $('#tarifas');
-  cont.innerHTML = '';
+  const neta = TARIFARIO[state.modalidad].neta;
+  $('#tarifas').innerHTML = [0, 1, 2, 3].map(i => {
+    const desde = i === 0 ? 0 : state.radios[i - 1];
+    const rango = i === 3 ? 'resto de la red' : `${desde}–${state.radios[i]} km`;
+    return `<div class="tar">
+      <span class="tar__swatch" style="background:${COLORS[i]}"></span>
+      <div class="tar__name"><b>Tarifa ${i + 1}</b><em>${NOMBRES[i]} · ${rango}</em></div>
+      <div class="tar__price"><b>${money.format(precio(i))}</b>
+        <em>${neta ? `+ IVA · ${money.format(precioFinal(i))} final` : 'valor final'}</em></div>
+    </div>`;
+  }).join('');
+}
 
-  state.tarifas.forEach((t, i) => {
-    const ultima = t.km === null;
-    const desde = i === 0 ? 0 : state.tarifas[i - 1].km;
-    const rango = ultima ? 'resto de la red' : `${desde} a ${t.km} km`;
-
-    const fila = document.createElement('div');
-    fila.className = 'tarifa';
-    fila.innerHTML = `
+function renderRadios() {
+  const cont = $('#radios');
+  cont.innerHTML = state.radios.map((r, i) => `
+    <div class="tarifa">
       <div class="tarifa__name">
         <span class="tarifa__swatch" style="background:${COLORS[i]}"></span>
-        <span>Tarifa ${i + 1}<em class="tarifa__range" data-range="${i}">${rango}</em></span>
+        <span>Tarifa ${i + 1}<em class="tarifa__range" data-range="${i}"></em></span>
       </div>
-      ${ultima
-        ? '<div class="tarifa__fija">sin tope</div>'
-        : `<div class="field"><input type="number" data-km="${i}" value="${t.km}" min="0.5" step="0.5" aria-label="Radio de la tarifa ${i + 1}"></div>`}
-      <div class="field field--money"><input type="number" data-precio="${i}" value="${t.precio}" min="0" step="100" aria-label="Precio de la tarifa ${i + 1}"></div>`;
-    cont.appendChild(fila);
-  });
+      <div class="field"><input type="number" data-km="${i}" value="${r}" min="0.5" step="0.5"
+        aria-label="Radio de la tarifa ${i + 1}"></div><span></span>
+    </div>`).join('');
 
   cont.querySelectorAll('input[data-km]').forEach(inp => {
     inp.addEventListener('input', () => {
-      state.tarifas[+inp.dataset.km].km = parseFloat(inp.value) || 0;
+      state.radios[+inp.dataset.km] = parseFloat(inp.value) || 0;
       marcarRadios();
       if (radiosValidos()) { actualizarRangos(); repintar(); }
     });
   });
-
-  cont.querySelectorAll('input[data-precio]').forEach(inp => {
-    inp.addEventListener('input', () => {
-      state.tarifas[+inp.dataset.precio].precio = parseFloat(inp.value) || 0;
-      repintar();
-    });
-  });
+  actualizarRangos();
 }
 
 function actualizarRangos() {
   $$('[data-range]').forEach(el => {
     const i = +el.dataset.range;
-    if (state.tarifas[i].km === null) return;
-    const desde = i === 0 ? 0 : state.tarifas[i - 1].km;
-    el.textContent = `${desde} a ${state.tarifas[i].km} km`;
+    el.textContent = `${i === 0 ? 0 : state.radios[i - 1]} a ${state.radios[i]} km`;
   });
 }
 
 function marcarRadios() {
   $$('input[data-km]').forEach(inp => {
     const i = +inp.dataset.km;
-    const ok = i === 0 || state.tarifas[i].km > state.tarifas[i - 1].km;
-    inp.classList.toggle('is-bad', !ok);
+    inp.classList.toggle('is-bad', i > 0 && state.radios[i] <= state.radios[i - 1]);
   });
   if (!radiosValidos()) aviso('Cada tarifa tiene que llegar más lejos que la anterior.');
 }
@@ -484,17 +538,17 @@ function marcarRadios() {
 function renderLeyenda() {
   const ul = $('#legend-items');
   ul.innerHTML = '';
-  state.tarifas.forEach((t, i) => {
-    const desde = i === 0 ? 0 : state.tarifas[i - 1].km;
-    const rango = t.km === null ? `+${desde} km` : `${desde}–${t.km} km`;
+  [0, 1, 2, 3].forEach(i => {
+    const desde = i === 0 ? 0 : state.radios[i - 1];
+    const rango = i === 3 ? `+${desde} km` : `${desde}–${state.radios[i]} km`;
     const li = document.createElement('li');
-    li.innerHTML = `<i style="background:${COLORS[i]}"></i><span>${rango}</span><b>${money.format(t.precio)}</b>`;
+    li.innerHTML = `<i style="background:${COLORS[i]}"></i><span>${rango}</span><b>${money.format(precio(i))}</b>`;
     ul.appendChild(li);
   });
 }
 
 function agruparCobertura() {
-  const grupos = state.tarifas.map(() => []);
+  const grupos = [[], [], [], []];
   const fuera = [];
   if (!state.geo || !state.origen) return { grupos, fuera };
 
@@ -536,8 +590,8 @@ function renderCobertura() {
     cont.appendChild(div);
   };
 
-  state.tarifas.forEach((t, i) => {
-    fila('t' + i, COLORS[i], `Tarifa ${i + 1} · ${money.format(t.precio)}`, grupos[i],
+  [0, 1, 2, 3].forEach(i => {
+    fila('t' + i, COLORS[i], `Tarifa ${i + 1} · ${money.format(precio(i))}`, grupos[i],
          'Ninguna localidad cae en este rango.');
   });
   fila('out', GRIS_SIN_RED, 'Fuera de la red', fuera, 'La red llega a todas las zonas del mapa.');
@@ -548,7 +602,7 @@ function exportarCSV() {
   const filas = [['localidad', 'region', 'tarifa', 'precio', 'km_desde_deposito']];
 
   grupos.forEach((g, i) => g.forEach(item => filas.push([
-    item.nombre, item.region, `T${i + 1}`, state.tarifas[i].precio, km1.format(item.dist),
+    item.nombre, item.region, `T${i + 1}`, precio(i), km1.format(item.dist),
   ])));
   fuera.forEach(item => filas.push([item.nombre, item.region, 'sin cobertura', '', '']));
 
@@ -577,7 +631,7 @@ function guardar() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       origen: state.origen && { lat: state.origen.lat, lon: state.origen.lon, label: state.origen.label },
-      tarifas: state.tarifas, vista: state.vista,
+      radios: state.radios, volumen: state.volumen, modalidad: state.modalidad, vista: state.vista,
     }));
   } catch { /* modo privado: seguimos sin persistir */ }
 }
@@ -618,10 +672,23 @@ function conectarPick() {
 }
 
 async function init() {
+  renderRadios();
+  renderOperacion();
   renderTarifas();
   renderLeyenda();
   conectarVista();
   conectarPick();
+
+  $('#volumen').addEventListener('input', e => {
+    state.volumen = Math.max(1, parseInt(e.target.value, 10) || 1);
+    repintar();
+  });
+
+  $$('[data-modalidad]').forEach(b => b.addEventListener('click', () => {
+    $$('[data-modalidad]').forEach(o => o.classList.toggle('is-active', o === b));
+    state.modalidad = b.dataset.modalidad;
+    repintar();
+  }));
 
   $('#btn-export').addEventListener('click', exportarCSV);
 
@@ -638,6 +705,7 @@ async function init() {
   try {
     const res = await fetch('data/amba.geojson');
     state.geo = await res.json();
+    calcularCentroCaba();
     dibujarZonas();
   } catch {
     aviso('No se pudo cargar el mapa de zonas. Servilo con un servidor local.');
@@ -645,9 +713,14 @@ async function init() {
 
   const prev = restaurar();
   if (prev) {
-    if (Array.isArray(prev.tarifas) && prev.tarifas.length === 4) {
-      state.tarifas = prev.tarifas;
-      renderTarifas();
+    if (Array.isArray(prev.radios) && prev.radios.length === 3) {
+      state.radios = prev.radios;
+      renderRadios();
+    }
+    if (prev.volumen) { state.volumen = prev.volumen; $('#volumen').value = prev.volumen; }
+    if (prev.modalidad && TARIFARIO[prev.modalidad]) {
+      state.modalidad = prev.modalidad;
+      $$('[data-modalidad]').forEach(b => b.classList.toggle('is-active', b.dataset.modalidad === prev.modalidad));
     }
     if (prev.vista) {
       state.vista = prev.vista;
@@ -655,6 +728,8 @@ async function init() {
     }
     if (prev.origen) setOrigen(prev.origen.lat, prev.origen.lon, prev.origen.label);
   }
+  renderOperacion();
+  renderTarifas();
   renderLeyenda();
 }
 

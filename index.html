@@ -63,30 +63,58 @@
       </section>
 
       <!-- Paso 2 -->
-      <section class="card" id="step-tarifas">
+      <section class="card" id="step-operacion">
         <div class="card__head">
           <span class="step">2</span>
           <div>
-            <h2>Las 4 tarifas</h2>
-            <p>Hasta cuántos km llega cada una y cuánto sale. La 4 es todo el resto de la red.</p>
+            <h2>Tu operación</h2>
+            <p>Cuántos envíos despachás por semana y cómo facturás.</p>
           </div>
         </div>
 
-        <div class="tarifa-head">
-          <span></span><span>Hasta (km)</span><span>Precio</span>
+        <label class="campo-linea" for="volumen">
+          <span>Envíos por semana</span>
+          <input type="number" id="volumen" value="150" min="1" max="5000" step="10">
+        </label>
+
+        <div class="opciones-fact" role="group" aria-label="Modalidad de facturación">
+          <button type="button" data-modalidad="a" class="is-active">Factura A</button>
+          <button type="button" data-modalidad="sf">Sin factura</button>
         </div>
+
+        <div class="escalon" id="escalon"></div>
+      </section>
+
+      <!-- Tarifas -->
+      <section class="card" id="step-tarifas">
+        <div class="card__head">
+          <span class="step">3</span>
+          <div>
+            <h2>Tus tarifas por envío</h2>
+            <p id="sub-tarifas">Vigentes desde el 1 de septiembre de 2026.</p>
+          </div>
+        </div>
+
         <div id="tarifas"></div>
 
-        <p class="hint">
-          Radios calibrados con <b>62.933 envíos ya facturados</b>: reproducen el tramo real
-          en el 91,5% de los casos. La distancia es en línea recta.
-        </p>
+        <p class="hint" id="nota-fact"></p>
+
+        <details class="ajustes">
+          <summary>Ajustar los radios de zona</summary>
+          <p class="hint">
+            Las zonas las define Mercado Envíos Flex, no ProCourrier. Estos radios
+            son una estimación calibrada con <b>62.933 envíos facturados</b>: aciertan
+            el tramo real en el 91,7% de los casos. Toda la Capital se cobra como una
+            sola zona, así que se mide al centro de CABA y no a cada barrio.
+          </p>
+          <div id="radios"></div>
+        </details>
       </section>
 
       <!-- Paso 3 -->
       <section class="card" id="step-cotizar">
         <div class="card__head">
-          <span class="step">3</span>
+          <span class="step">4</span>
           <div>
             <h2>Cotizar un envío</h2>
             <p>Dirección de destino del paquete.</p>
