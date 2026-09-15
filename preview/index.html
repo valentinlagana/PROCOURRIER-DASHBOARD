@@ -1,0 +1,1209 @@
+<title>Cotizador ProCourrier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ProCourrier · consola de tarifas del AMBA.
+   Diseño de tema único: consola de despacho sobre fondo nocturno. */
+
+:root {
+  --ground:   #0a0f1a;
+  --surface:  #121b2b;
+  --surface-2:#18243a;
+  --line:     #223149;
+  --line-2:   #2d3f5c;
+  --ink:      #eaf0f9;
+  --ink-2:    #93a4bf;
+  --ink-3:    #5d6e8c;
+  --accent:   #00d9b2;
+  --accent-d: #04352c;
+
+  --t1: #ffd166;
+  --t2: #f79a3e;
+  --t3: #e4572e;
+  --t4: #a4243b;
+  --sin: #8496ae;
+
+  --ui:   Archivo, "Helvetica Neue", Arial, sans-serif;
+  --dato: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --r:  13px;
+  --rs: 9px;
+  --sombra: 0 20px 44px -26px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--ui);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input { font: inherit; color: inherit; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ─── Estructura ─── */
+
+.app {
+  display: grid;
+  grid-template-columns: 372px 1fr;
+  height: 100vh;
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+
+.rail__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 15px 17px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.rail__scroll::-webkit-scrollbar { width: 9px; }
+.rail__scroll::-webkit-scrollbar-thumb {
+  background: var(--line); border-radius: 99px; border: 3px solid var(--surface);
+}
+
+/* ─── Marca ─── */
+
+.marca {
+  display: flex; align-items: center; gap: 11px;
+  padding: 18px 19px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.marca__logo {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: 11px;
+  color: var(--accent-d);
+  background: linear-gradient(145deg, var(--accent), #17b9e0);
+}
+
+.marca__logo svg { width: 21px; height: 21px; }
+.marca__t { line-height: 1.25; }
+.marca__t strong { display: block; font-size: 15.5px; letter-spacing: -.015em; }
+.marca__t span {
+  font-family: var(--dato);
+  font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3);
+}
+
+/* ─── Bloques ─── */
+
+.bloque {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 15px;
+}
+
+.bloque__cab { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 13px; }
+.bloque__cab h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: -.005em; }
+.bloque__cab p { margin: 2px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--ink-3); }
+
+.paso {
+  flex: none; width: 21px; height: 21px; margin-top: 1px;
+  display: grid; place-items: center;
+  border-radius: 6px;
+  font-family: var(--dato); font-size: 11px; font-weight: 600;
+  color: var(--accent-d); background: var(--accent);
+}
+
+.paso--n { background: var(--line); color: var(--ink-2); }
+.paso--n svg { width: 12px; height: 12px; }
+
+/* ─── Selector de localidad ─── */
+
+.combo { position: relative; }
+
+.combo svg {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px; color: var(--ink-3); pointer-events: none;
+}
+
+.combo input {
+  width: 100%;
+  padding: 10px 12px 10px 33px;
+  border-radius: var(--rs);
+  border: 1px solid var(--line);
+  background: var(--ground);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.combo input::placeholder { color: var(--ink-3); }
+.combo input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,217,178,.13); }
+
+.opciones {
+  position: absolute; z-index: 40; top: calc(100% + 5px); left: 0; right: 0;
+  margin: 0; padding: 4px; list-style: none;
+  max-height: 224px; overflow-y: auto;
+  background: #0f1828;
+  border: 1px solid var(--line);
+  border-radius: var(--rs);
+  box-shadow: var(--sombra);
+}
+
+.opciones li {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 7px 9px; border-radius: 6px;
+  font-size: 12.5px; cursor: pointer;
+}
+
+.opciones li:hover, .opciones li.marcada { background: var(--line); }
+.opciones li em { font-family: var(--dato); font-size: 10px; font-style: normal; color: var(--ink-3); margin-left: auto; }
+.opciones li.vacio { cursor: default; color: var(--ink-3); }
+.opciones li.vacio:hover { background: none; }
+
+.nota { margin: 9px 0 0; font-size: 11px; line-height: 1.5; color: var(--ink-3); }
+.nota b { color: var(--ink-2); font-weight: 500; }
+
+.elegido {
+  display: flex; align-items: center; gap: 9px;
+  margin-top: 10px; padding: 9px 11px;
+  border-radius: var(--rs);
+  background: rgba(0,217,178,.07);
+  border: 1px solid rgba(0,217,178,.22);
+  font-size: 12px; line-height: 1.35;
+}
+
+.elegido i { flex: none; width: 7px; height: 7px; border-radius: 99px; background: var(--accent); }
+.elegido em { font-family: var(--dato); font-size: 10px; font-style: normal; color: var(--ink-3); margin-left: auto; }
+
+/* ─── Tarifas ─── */
+
+.grilla-cab, .tarifa {
+  display: grid;
+  grid-template-columns: 1fr 66px 92px;
+  gap: 8px;
+  align-items: center;
+}
+
+.grilla-cab {
+  padding: 0 2px 7px;
+  font-family: var(--dato);
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .09em; color: var(--ink-3);
+}
+
+.grilla-cab span:not(:first-child) { text-align: center; }
+
+.tarifa { padding: 4px 0; }
+.tarifa__n { display: flex; align-items: center; gap: 9px; min-width: 0; }
+
+.tarifa__c {
+  flex: none; width: 11px; height: 11px; border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+}
+
+.tarifa__n b { font-size: 12.5px; font-weight: 500; display: block; }
+.tarifa__n em {
+  font-family: var(--dato); font-size: 10px; font-style: normal; color: var(--ink-3);
+}
+
+.campo { position: relative; display: flex; }
+
+.campo input {
+  width: 100%;
+  padding: 8px 9px;
+  text-align: right;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--ground);
+  font-family: var(--dato); font-size: 12px;
+  outline: none;
+  -moz-appearance: textfield;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.campo input::-webkit-outer-spin-button,
+.campo input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.campo input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,217,178,.13); }
+.campo input.mal { border-color: var(--t3); }
+.campo--pesos input { padding-left: 20px; }
+
+.sin-tope {
+  text-align: center;
+  font-family: var(--dato);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+.campo--pesos::before {
+  content: "$"; position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  font-family: var(--dato); font-size: 11.5px; color: var(--ink-3); pointer-events: none;
+}
+
+.factor {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: 11px; padding-top: 11px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px; color: var(--ink-2);
+}
+
+.factor input {
+  width: 68px; padding: 7px 9px; text-align: right;
+  border-radius: 7px; border: 1px solid var(--line); background: var(--ground);
+  font-family: var(--dato); font-size: 12px; outline: none; -moz-appearance: textfield;
+}
+
+.factor input::-webkit-outer-spin-button,
+.factor input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ─── Cotización ─── */
+
+.cotiz {
+  margin-top: 12px; padding: 14px;
+  border-radius: var(--rs);
+  background: var(--ground);
+  border: 1px solid var(--line);
+}
+
+.cotiz__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+.cotiz__chapa {
+  padding: 3px 9px; border-radius: 99px;
+  font-family: var(--dato); font-size: 10px; font-weight: 600; letter-spacing: .04em;
+}
+
+.cotiz__km { font-family: var(--dato); font-size: 11px; color: var(--ink-3); }
+
+.cotiz__precio {
+  margin-top: 8px;
+  font-family: var(--dato); font-size: 29px; font-weight: 600; letter-spacing: -.03em;
+}
+
+.cotiz__donde { margin-top: 4px; font-size: 11.5px; line-height: 1.45; color: var(--ink-2); }
+.cotiz.afuera .cotiz__chapa { background: var(--line) !important; color: var(--ink-2); }
+.cotiz.afuera .cotiz__precio { font-size: 17px; color: var(--ink-2); }
+
+/* ─── Cobertura ─── */
+
+.cobertura { display: flex; flex-direction: column; gap: 5px; }
+
+.fila { border: 1px solid var(--line); border-radius: var(--rs); overflow: hidden; }
+
+.fila__cab {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 9px 11px; border: 0; background: transparent; cursor: pointer; text-align: left;
+}
+
+.fila__cab:hover { background: var(--line); }
+.fila__c { flex: none; width: 3px; height: 21px; border-radius: 99px; }
+.fila__n { flex: 1; font-size: 12.5px; font-weight: 500; }
+.fila__q { font-family: var(--dato); font-size: 11px; color: var(--ink-3); }
+.fila__v { width: 11px; height: 11px; color: var(--ink-3); transition: transform .18s; }
+.fila.abierta .fila__v { transform: rotate(180deg); }
+.fila__cuerpo { display: none; padding: 1px 11px 11px 23px; font-size: 11.5px; line-height: 1.65; color: var(--ink-2); }
+.fila.abierta .fila__cuerpo { display: block; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; margin-top: 10px; padding: 9px 14px;
+  border-radius: var(--rs); border: 1px solid var(--line);
+  background: transparent; color: var(--ink-2);
+  font-size: 12.5px; font-weight: 500; cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.btn:hover { background: var(--line); color: var(--ink); border-color: var(--line-2); }
+.btn svg { width: 14px; height: 14px; }
+
+.pie { margin: 2px; font-size: 10.5px; line-height: 1.55; color: #46577a; }
+
+/* ─── Mapa ─── */
+
+.lienzo { position: relative; min-width: 0; overflow: hidden; background: #e8ecf1; }
+
+#mapa { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#mapa.arrastrando { cursor: grabbing; }
+
+.zona { transition: fill-opacity .2s; }
+.zona:hover { fill-opacity: .8; }
+
+.barra-modo {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 2px; padding: 3px;
+  border-radius: 99px;
+  background: rgba(18,27,43,.9);
+  border: 1px solid var(--line);
+  box-shadow: var(--sombra);
+  backdrop-filter: blur(10px);
+}
+
+.barra-modo button {
+  padding: 6px 14px; border: 0; border-radius: 99px;
+  background: transparent; color: var(--ink-2);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.barra-modo button:hover { color: var(--ink); }
+.barra-modo button.activo { background: var(--accent); color: var(--accent-d); font-weight: 600; }
+
+/* Franja de tarifas: el ancho de cada tramo es proporcional a sus km. */
+
+.franja {
+  position: absolute; left: 16px; right: 16px; bottom: 16px;
+  max-width: 560px;
+  padding: 12px 14px 11px;
+  border-radius: var(--r);
+  background: rgba(18,27,43,.92);
+  border: 1px solid var(--line);
+  box-shadow: var(--sombra);
+  backdrop-filter: blur(12px);
+}
+
+.franja__t {
+  font-family: var(--dato);
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3);
+  margin-bottom: 9px;
+}
+
+.franja__barra { display: flex; gap: 3px; }
+
+.franja__seg {
+  min-width: 0;
+  padding: 7px 8px 6px;
+  border-radius: 6px;
+}
+
+.franja__seg b { display: block; font-family: var(--dato); font-size: 12px; font-weight: 600; }
+.franja__seg span { display: block; font-family: var(--dato); font-size: 9.5px; opacity: .72; margin-top: 1px; }
+
+.credito {
+  position: absolute; z-index: 20; right: 10px; bottom: 8px;
+  padding: 3px 8px; border-radius: 6px;
+  background: rgba(255,255,255,.78);
+  color: #4a5a70; font-size: 9.5px;
+}
+
+.globo {
+  position: absolute; z-index: 30;
+  padding: 8px 11px;
+  border-radius: 9px;
+  background: rgba(10,15,26,.96);
+  border: 1px solid var(--line);
+  box-shadow: var(--sombra);
+  font-size: 12px; line-height: 1.5;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 12px));
+  white-space: nowrap;
+}
+
+.globo strong { display: block; font-weight: 600; }
+.globo em { font-family: var(--dato); font-size: 10px; font-style: normal; color: var(--ink-3); }
+.globo b { font-family: var(--dato); }
+
+.aviso {
+  position: absolute; z-index: 40; bottom: 16px; left: 50%;
+  transform: translateX(-50%);
+  padding: 9px 16px; border-radius: 99px;
+  background: rgba(18,27,43,.96);
+  border: 1px solid var(--line-2);
+  font-size: 12.5px;
+  box-shadow: var(--sombra);
+}
+
+.zoom {
+  position: absolute; top: 14px; right: 14px;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 3px; border-radius: 10px;
+  background: rgba(18,27,43,.9);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+}
+
+.zoom button {
+  width: 28px; height: 28px; border: 0; border-radius: 7px;
+  background: transparent; color: var(--ink-2);
+  font-size: 16px; line-height: 1; cursor: pointer;
+}
+
+.zoom button:hover { background: var(--line); color: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ─── Angosto ─── */
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 48vh auto; height: auto; }
+  .lienzo { order: 1; height: 48vh; }
+  .rail { order: 2; border-right: 0; border-top: 1px solid var(--line); }
+  .rail__scroll { overflow: visible; padding: 14px 14px 24px; }
+  .franja { left: 12px; right: 12px; bottom: 12px; padding: 10px 11px 9px; }
+  .franja__t { display: none; }
+  .franja__seg span { display: none; }
+}
+
+@media (max-width: 420px) {
+  .grilla-cab, .tarifa { grid-template-columns: 1fr 58px 80px; }
+}
+</style>
+
+<div class="app">
+
+  <aside class="rail">
+    <header class="marca">
+      <div class="marca__logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 13h10V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v7Z"/>
+          <path d="M13 9h4.5l3.5 4v4h-8V9Z"/>
+          <circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>
+        </svg>
+      </div>
+      <div class="marca__t">
+        <strong>ProCourrier</strong>
+        <span>Cotizador AMBA</span>
+      </div>
+    </header>
+
+    <div class="rail__scroll">
+
+      <section class="bloque">
+        <div class="bloque__cab">
+          <span class="paso">1</span>
+          <div>
+            <h2>Depósito de origen</h2>
+            <p>Elegí el barrio o partido, o marcalo con un click en el mapa.</p>
+          </div>
+        </div>
+
+        <div class="combo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="busca-origen" placeholder="Villa Crespo, Avellaneda, Tigre…" autocomplete="off" spellcheck="false">
+          <ul class="opciones" id="op-origen" hidden></ul>
+        </div>
+
+        <div class="elegido" id="chip-origen">
+          <i></i><span id="txt-origen">Villa Crespo</span><em>ejemplo</em>
+        </div>
+      </section>
+
+      <section class="bloque">
+        <div class="bloque__cab">
+          <span class="paso">2</span>
+          <div>
+            <h2>Las 4 tarifas</h2>
+            <p>Hasta cuántos km llega cada una. La 4 es todo el resto de la red.</p>
+          </div>
+        </div>
+
+        <div class="grilla-cab"><span></span><span>Hasta km</span><span>Precio</span></div>
+        <div id="tarifas"></div>
+
+        <p class="nota">
+          <b>Radios calibrados con 62.933 envíos facturados</b> — reproducen el tramo
+          real en el 91,7% de los casos. Distancia en línea recta.
+        </p>
+      </section>
+
+      <section class="bloque">
+        <div class="bloque__cab">
+          <span class="paso">3</span>
+          <div>
+            <h2>Cotizar un envío</h2>
+            <p>A qué barrio o partido va el paquete.</p>
+          </div>
+        </div>
+
+        <div class="combo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="busca-destino" placeholder="Quilmes, Palermo, Pilar…" autocomplete="off" spellcheck="false">
+          <ul class="opciones" id="op-destino" hidden></ul>
+        </div>
+
+        <div class="cotiz" id="cotiz">
+          <div class="cotiz__top">
+            <span class="cotiz__chapa" id="chapa">Tarifa 3</span>
+            <span class="cotiz__km" id="km">—</span>
+          </div>
+          <div class="cotiz__precio" id="precio">—</div>
+          <div class="cotiz__donde" id="donde">—</div>
+        </div>
+      </section>
+
+      <section class="bloque">
+        <div class="bloque__cab">
+          <span class="paso paso--n">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          </span>
+          <div>
+            <h2>Cobertura por tarifa</h2>
+            <p>Qué barrios y partidos caen en cada zona.</p>
+          </div>
+        </div>
+
+        <div class="cobertura" id="cobertura"></div>
+
+        <button class="btn" id="copiar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+          Copiar tabla para Excel
+        </button>
+      </section>
+
+      <p class="pie">
+        La red llega hasta Luján, Dique Luján, Zárate, Campana y La Plata.
+        La zona del propio depósito siempre es Tarifa 1; para un depósito en CABA,
+        toda la Capital es Tarifa 1.
+      </p>
+    </div>
+  </aside>
+
+  <main class="lienzo" id="lienzo">
+    <svg id="mapa" role="img" aria-label="Mapa de tarifas de CABA y el Gran Buenos Aires"></svg>
+
+    <div class="barra-modo" role="group" aria-label="Modo de vista">
+      <button data-modo="ambas" class="activo">Ambas</button>
+      <button data-modo="anillos">Anillos</button>
+      <button data-modo="zonas">Zonas</button>
+    </div>
+
+    <div class="zoom">
+      <button id="mas" aria-label="Acercar">+</button>
+      <button id="menos" aria-label="Alejar">&minus;</button>
+    </div>
+
+    <div class="franja">
+      <div class="franja__t">Tarifas desde el depósito</div>
+      <div class="franja__barra" id="franja"></div>
+    </div>
+
+    <div class="credito">Mapa base: Esri — HERE, Garmin, © OpenStreetMap · Límites: IGN y GCBA</div>
+
+    <div class="globo" id="globo" hidden></div>
+    <div class="aviso" id="aviso" hidden></div>
+  </main>
+</div>
+
+<script src="amba.js"></script>
+<script>
+'use strict';
+
+/* ════════════ Datos y formato ════════════ */
+
+const COLORES = ['#ffd166', '#f79a3e', '#e4572e', '#a4243b'];
+const TINTA = ['#17110a', '#17110a', '#fff3ec', '#ffeef0'];   // texto sobre cada tarifa
+const SIN = '#8496ae';
+
+const pesos = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+const un = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 });
+
+const $ = s => document.getElementById(s);
+
+const zonas = window.AMBA.features.map((f, i) => ({
+  i,
+  nombre: f.properties.nombre,
+  region: f.properties.region,
+  enRed: f.properties.enRed,
+  detalle: f.properties.region === 'CABA'
+    ? 'CABA · Comuna ' + f.properties.comuna
+    : 'GBA · ' + f.properties.cordon + '° cordón',
+  lat: f.properties.lat,
+  lon: f.properties.lon,
+  geom: f.geometry,
+}));
+
+const enRed = zonas.filter(z => z.enRed);
+
+const estado = {
+  origen: zonas.find(z => z.nombre === 'Villa Crespo'),
+  destino: zonas.find(z => z.nombre === 'Quilmes'),
+  tarifas: [
+    { km: 9.5,  precio: 4490 },
+    { km: 21.5, precio: 6490 },
+    { km: 43.5, precio: 8690 },
+    { km: null, precio: 9990 },
+  ],
+  modo: 'ambas',
+};
+
+/* ════════════ Geometría ════════════ */
+
+const R = 6371;
+const rad = Math.PI / 180;
+
+function distancia(a, b) {
+  const dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
+  const s = Math.sin(dLat / 2) ** 2 +
+            Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+function aPunto(centro, km, rumbo) {
+  const d = km / R, br = rumbo * rad;
+  const la1 = centro.lat * rad, lo1 = centro.lon * rad;
+  const la2 = Math.asin(Math.sin(la1) * Math.cos(d) + Math.cos(la1) * Math.sin(d) * Math.cos(br));
+  const lo2 = lo1 + Math.atan2(Math.sin(br) * Math.sin(d) * Math.cos(la1),
+                               Math.cos(d) - Math.sin(la1) * Math.sin(la2));
+  return { lat: la2 / rad, lon: lo2 / rad };
+}
+
+const FUERA_DE_RED = -1;
+
+/** Índice de tarifa por distancia. La tarifa 4 no tiene tope. */
+function tarifaDe(km) {
+  for (let i = 0; i < 3; i++) if (km <= estado.tarifas[i].km) return i;
+  return 3;
+}
+
+/** Dos reglas mandan sobre la distancia: la zona del propio depósito es T1,
+    y para un depósito en CABA toda la Capital es T1. */
+function tarifaDeZona(z) {
+  if (!z.enRed) return FUERA_DE_RED;
+  const o = estado.origen;
+  if (o.nombre === z.nombre) return 0;
+  if (o.region === 'CABA' && z.region === 'CABA') return 0;
+  return tarifaDe(distancia(o, z));
+}
+
+const radiosOk = () => estado.tarifas.slice(0, 3)
+  .every((t, i) => t.km > 0 && (i === 0 || t.km > estado.tarifas[i - 1].km));
+
+/* ════════════ Proyección Mercator ════════════ */
+
+const mercY = lat => Math.log(Math.tan(Math.PI / 4 + lat * rad / 2)) / rad;
+
+const W = 1000;
+let H, esc, x0, y0;
+
+(function ajustar() {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  zonas.forEach(z => {
+    const polis = z.geom.type === 'Polygon' ? [z.geom.coordinates] : z.geom.coordinates;
+    polis.forEach(p => p[0].forEach(([lon, lat]) => {
+      const y = mercY(lat);
+      if (lon < minX) minX = lon; if (lon > maxX) maxX = lon;
+      if (y < minY) minY = y;     if (y > maxY) maxY = y;
+    }));
+  });
+  const m = (maxX - minX) * 0.06;
+  minX -= m; maxX += m; minY -= m * .8; maxY += m * .8;
+  esc = W / (maxX - minX);
+  H = Math.round((maxY - minY) * esc);
+  x0 = minX; y0 = maxY;
+})();
+
+const px = (lon, lat) => [(lon - x0) * esc, (y0 - mercY(lat)) * esc];
+
+function camino(geom) {
+  const polis = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates;
+  let d = '';
+  polis.forEach(poli => poli.forEach(anillo => {
+    anillo.forEach(([lon, lat], k) => {
+      const [x, y] = px(lon, lat);
+      d += (k ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+    });
+    d += 'Z';
+  }));
+  return d;
+}
+
+function caminoCirculo(centro, km) {
+  let d = '';
+  for (let i = 0; i <= 144; i++) {
+    const p = aPunto(centro, km, i * 2.5);
+    const [x, y] = px(p.lon, p.lat);
+    d += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+  }
+  return d + 'Z';
+}
+
+/* ════════════ Armado del SVG ════════════ */
+
+const NS = 'http://www.w3.org/2000/svg';
+const svg = $('mapa');
+svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+const el = (t, attrs) => {
+  const n = document.createElementNS(NS, t);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+};
+
+const gMundo = el('g', {});          // se mueve con el pan y el zoom
+
+// Mapa base: una sola imagen en Web Mercator, la misma proyección que los
+// polígonos, así que se ubica por sus esquinas y calza exacto.
+const MAPA = { lonMin: -59.765625, lonMax: -57.65625, latMin: -35.603719, latMax: -33.870416 };
+const [bx0, by0] = px(MAPA.lonMin, MAPA.latMax);
+const [bx1, by1] = px(MAPA.lonMax, MAPA.latMin);
+const base = el('image', {
+  href: 'basemap.jpg', x: bx0, y: by0, width: bx1 - bx0, height: by1 - by0,
+  preserveAspectRatio: 'none',
+});
+
+const gZonas = el('g', {});
+const gAnillos = el('g', { fill: 'none' });
+const gHud = el('g', {});            // tamaño constante en pantalla
+svg.append(gMundo, gHud);
+gMundo.append(base, gZonas, gAnillos);
+
+const caminos = zonas.map(z => {
+  const p = el('path', { d: camino(z.geom), class: 'zona', 'stroke-width': 1.1,
+                         'vector-effect': 'non-scaling-stroke' });
+  p.addEventListener('pointerenter', ev => mostrarGlobo(z, ev));
+  p.addEventListener('pointermove', ev => moverGlobo(ev));
+  p.addEventListener('pointerleave', ocultarGlobo);
+  gZonas.append(p);
+  return p;
+});
+
+/* ════════════ Pan y zoom ════════════ */
+
+let k = 1, tx = 0, ty = 0;
+
+function aplicar() {
+  gMundo.setAttribute('transform', 'translate(' + tx + ' ' + ty + ') scale(' + k + ')');
+  pintarHud();
+}
+
+/* Encuadre: toda el área con servicio, que es lo que el vendedor quiere ver. */
+const CAJA_RED = (() => {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  enRed.forEach(z => {
+    const polis = z.geom.type === 'Polygon' ? [z.geom.coordinates] : z.geom.coordinates;
+    polis.forEach(p => p[0].forEach(([lon, lat]) => {
+      const [x, y] = px(lon, lat);
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }));
+  });
+  return { minX, maxX, minY, maxY };
+})();
+
+function encuadrar() {
+  const { minX, maxX, minY, maxY } = CAJA_RED;
+  k = Math.min(9, Math.max(.75, Math.min(W / (maxX - minX), H / (maxY - minY)) * .96));
+  tx = W / 2 - ((minX + maxX) / 2) * k;
+  ty = H / 2 - ((minY + maxY) / 2) * k;
+  aplicar();
+}
+
+function zoomEn(f, cx, cy) {
+  const nk = Math.min(9, Math.max(.75, k * f));
+  const r = nk / k;
+  tx = cx - (cx - tx) * r;
+  ty = cy - (cy - ty) * r;
+  k = nk;
+  aplicar();
+}
+
+function aUsuario(ev) {
+  const c = svg.getScreenCTM().inverse();
+  const p = svg.createSVGPoint();
+  p.x = ev.clientX; p.y = ev.clientY;
+  const u = p.matrixTransform(c);
+  return [u.x, u.y];
+}
+
+svg.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const [ux, uy] = aUsuario(ev);
+  zoomEn(ev.deltaY < 0 ? 1.18 : 1 / 1.18, ux, uy);
+}, { passive: false });
+
+let arrastre = null, movido = 0;
+
+svg.addEventListener('pointerdown', ev => {
+  arrastre = { x: ev.clientX, y: ev.clientY, tx, ty };
+  movido = 0;
+  svg.setPointerCapture(ev.pointerId);
+  svg.classList.add('arrastrando');
+});
+
+svg.addEventListener('pointermove', ev => {
+  if (!arrastre) return;
+  const c = svg.getScreenCTM();
+  const dx = (ev.clientX - arrastre.x) / c.a;
+  const dy = (ev.clientY - arrastre.y) / c.d;
+  movido = Math.max(movido, Math.abs(ev.clientX - arrastre.x) + Math.abs(ev.clientY - arrastre.y));
+  tx = arrastre.tx + dx; ty = arrastre.ty + dy;
+  aplicar();
+});
+
+function soltar(ev) {
+  if (!arrastre) return;
+  arrastre = null;
+  svg.classList.remove('arrastrando');
+  if (movido < 4) marcarDeposito(ev);
+}
+
+svg.addEventListener('pointerup', soltar);
+svg.addEventListener('pointercancel', () => { arrastre = null; svg.classList.remove('arrastrando'); });
+
+$('mas').addEventListener('click', () => zoomEn(1.4, W / 2, H / 2));
+$('menos').addEventListener('click', () => zoomEn(1 / 1.4, W / 2, H / 2));
+
+/* Click en el mapa: el depósito se muda al punto marcado. */
+function marcarDeposito(ev) {
+  const [ux, uy] = aUsuario(ev);
+  const wx = (ux - tx) / k, wy = (uy - ty) / k;
+  const lon = wx / esc + x0;
+  const lat = 2 * Math.atan(Math.exp((y0 - wy / esc) * rad)) / rad - 90;
+  const dentro = zonas.find(z => enZona({ lat, lon }, z));
+  if (!dentro || !dentro.enRed) {
+    avisar('Ese punto queda fuera de la red: elegí un barrio o partido con servicio.');
+    return;
+  }
+  estado.origen = dentro;
+  $('txt-origen').textContent = dentro.nombre;
+  $('chip-origen').querySelector('em').textContent = dentro.region;
+  repintar();
+  avisar('Depósito movido a ' + dentro.nombre + '.');
+}
+
+function enAnillo(p, anillo) {
+  let dentro = false;
+  for (let i = 0, j = anillo.length - 1; i < anillo.length; j = i++) {
+    const [xi, yi] = anillo[i], [xj, yj] = anillo[j];
+    if ((yi > p.lat) !== (yj > p.lat) && p.lon < ((xj - xi) * (p.lat - yi)) / (yj - yi) + xi) dentro = !dentro;
+  }
+  return dentro;
+}
+
+function enZona(p, z) {
+  const polis = z.geom.type === 'Polygon' ? [z.geom.coordinates] : z.geom.coordinates;
+  return polis.some(poli => enAnillo(p, poli[0]) && !poli.slice(1).some(h => enAnillo(p, h)));
+}
+
+/* ════════════ Pintado ════════════ */
+
+function pintarZonas() {
+  const verZonas = estado.modo !== 'anillos';
+  const op = estado.modo === 'zonas' ? .62 : .5;
+  zonas.forEach((z, i) => {
+    const t = tarifaDeZona(z);
+    const afuera = t === FUERA_DE_RED;
+    caminos[i].setAttribute('fill', afuera ? SIN : COLORES[t]);
+    caminos[i].setAttribute('fill-opacity', verZonas ? (afuera ? .22 : op) : .1);
+    caminos[i].setAttribute('stroke', afuera ? '#7d8da3' : '#ffffff');
+    caminos[i].setAttribute('stroke-opacity', verZonas ? .9 : .35);
+  });
+}
+
+function pintarAnillos() {
+  gAnillos.textContent = '';
+  if (!radiosOk()) return;
+  const ver = estado.modo !== 'zonas';
+  const relleno = estado.modo === 'anillos';
+
+  estado.tarifas.slice(0, 3).forEach((t, i) => {
+    if (!ver) return;
+    if (relleno) {
+      const desde = i === 0 ? null : caminoCirculo(estado.origen, estado.tarifas[i - 1].km);
+      const p = el('path', {
+        d: caminoCirculo(estado.origen, t.km) + (desde || ''),
+        'fill-rule': 'evenodd', fill: COLORES[i], 'fill-opacity': .82,
+        stroke: COLORES[i], 'stroke-width': 1.2, 'vector-effect': 'non-scaling-stroke',
+      });
+      gAnillos.append(p);
+    } else {
+      gAnillos.append(el('path', {
+        d: caminoCirculo(estado.origen, t.km),
+        fill: 'none', stroke: COLORES[i], 'stroke-width': 2,
+        'stroke-dasharray': '7 6', 'vector-effect': 'non-scaling-stroke', opacity: .95,
+      }));
+    }
+  });
+}
+
+/* HUD: marcador del depósito y etiquetas de precio, siempre del mismo tamaño. */
+function pintarHud() {
+  gHud.textContent = '';
+  const aPantalla = (lon, lat) => { const [x, y] = px(lon, lat); return [x * k + tx, y * k + ty]; };
+
+  if (estado.modo !== 'zonas' && radiosOk()) {
+    [0, 1, 2, 3].forEach(i => {
+      const t = estado.tarifas[i];
+      const desde = i === 0 ? 0 : estado.tarifas[i - 1].km;
+      // La T4 no tiene anillo: se rotula apenas afuera del último.
+      const radio = i === 3 ? estado.tarifas[2].km * 1.28 : desde + (t.km - desde) * .62;
+      const p = aPunto(estado.origen, radio, i === 3 ? -10 : 68 - i * 25);
+      const [x, y] = aPantalla(p.lon, p.lat);
+      if (x < -40 || y < -20 || x > W + 40 || y > H + 20) return;
+
+      const texto = 'T' + (i + 1) + ' · ' + pesos.format(t.precio) + (i === 3 ? ' · resto de la red' : '');
+      const ancho = texto.length * 6.4 + 16;
+      const g = el('g', { transform: 'translate(' + (x - ancho / 2) + ' ' + (y - 11) + ')' });
+      g.append(el('rect', { width: ancho, height: 22, rx: 11, fill: COLORES[i],
+                            stroke: '#0a0f1a', 'stroke-width': 1.5 }));
+      const tt = el('text', { x: ancho / 2, y: 15, 'text-anchor': 'middle', fill: TINTA[i],
+                              'font-family': 'IBM Plex Mono, monospace', 'font-size': 11, 'font-weight': 600 });
+      tt.textContent = texto;
+      g.append(tt);
+      gHud.append(g);
+    });
+  }
+
+  const [dx, dy] = aPantalla(estado.origen.lon, estado.origen.lat);
+  gHud.append(el('circle', { cx: dx, cy: dy, r: 11, fill: '#00d9b2', stroke: '#ffffff', 'stroke-width': 3 }));
+  gHud.append(el('circle', { cx: dx, cy: dy, r: 4, fill: '#04352c' }));
+
+  if (estado.destino) {
+    const [qx, qy] = aPantalla(estado.destino.lon, estado.destino.lat);
+    gHud.append(el('circle', { cx: qx, cy: qy, r: 7, fill: '#0a0f1a', stroke: '#ffffff', 'stroke-width': 3 }));
+  }
+}
+
+/* ════════════ Globo de información ════════════ */
+
+const globo = $('globo');
+
+function mostrarGlobo(z, ev) {
+  const t = tarifaDeZona(z);
+  const km = un.format(distancia(estado.origen, z));
+  globo.innerHTML = '<strong>' + z.nombre + '</strong><em>' + z.detalle + '</em><br>' +
+    '<b style="color:' + (t === FUERA_DE_RED ? '#93a4bf' : COLORES[t]) + '">' +
+    (t === FUERA_DE_RED ? 'Fuera de la red'
+       : 'Tarifa ' + (t + 1) + ' · ' + pesos.format(estado.tarifas[t].precio)) +
+    '</b> <em>· ' + km + ' km</em>';
+  globo.hidden = false;
+  moverGlobo(ev);
+}
+
+function moverGlobo(ev) {
+  const caja = $('lienzo').getBoundingClientRect();
+  globo.style.left = (ev.clientX - caja.left) + 'px';
+  globo.style.top = (ev.clientY - caja.top) + 'px';
+}
+
+function ocultarGlobo() { globo.hidden = true; }
+
+/* ════════════ Panel ════════════ */
+
+function pintarTarifas() {
+  const c = $('tarifas');
+  c.innerHTML = '';
+  estado.tarifas.forEach((t, i) => {
+    const desde = i === 0 ? 0 : estado.tarifas[i - 1].km;
+    const ultima = t.km === null;
+    const fila = document.createElement('div');
+    fila.className = 'tarifa';
+    fila.innerHTML =
+      '<div class="tarifa__n"><span class="tarifa__c" style="background:' + COLORES[i] + '"></span>' +
+      '<span><b>Tarifa ' + (i + 1) + '</b><em data-rango="' + i + '">' +
+      (ultima ? 'resto de la red' : desde + '–' + t.km + ' km') + '</em></span></div>' +
+      (ultima
+        ? '<div class="sin-tope">sin tope</div>'
+        : '<div class="campo"><input type="number" id="km-' + i + '" data-km="' + i + '" value="' + t.km + '" min="0.5" step="0.5" aria-label="Km de la tarifa ' + (i + 1) + '"></div>') +
+      '<div class="campo campo--pesos"><input type="number" id="precio-' + i + '" data-precio="' + i + '" value="' + t.precio + '" min="0" step="100" aria-label="Precio de la tarifa ' + (i + 1) + '"></div>';
+    c.append(fila);
+  });
+
+  c.querySelectorAll('[data-km]').forEach(inp => inp.addEventListener('input', () => {
+    estado.tarifas[+inp.dataset.km].km = parseFloat(inp.value) || 0;
+    c.querySelectorAll('[data-km]').forEach(o => {
+      const j = +o.dataset.km;
+      o.classList.toggle('mal', j > 0 && estado.tarifas[j].km <= estado.tarifas[j - 1].km);
+    });
+    if (radiosOk()) { rangos(); repintar(); }
+    else avisar('Cada tarifa tiene que llegar más lejos que la anterior.');
+  }));
+
+  c.querySelectorAll('[data-precio]').forEach(inp => inp.addEventListener('input', () => {
+    estado.tarifas[+inp.dataset.precio].precio = parseFloat(inp.value) || 0;
+    repintar();
+  }));
+}
+
+function rangos() {
+  document.querySelectorAll('[data-rango]').forEach(e => {
+    const i = +e.dataset.rango;
+    if (estado.tarifas[i].km === null) return;
+    e.textContent = (i === 0 ? 0 : estado.tarifas[i - 1].km) + '–' + estado.tarifas[i].km + ' km';
+  });
+}
+
+function pintarFranja() {
+  const total = estado.tarifas[2].km || 1;
+  $('franja').innerHTML = estado.tarifas.map((t, i) => {
+    const desde = i === 0 ? 0 : estado.tarifas[i - 1].km;
+    const ultima = t.km === null;
+    const ancho = ultima ? 34 : Math.max(11, ((t.km - desde) / total) * 66);
+    return '<div class="franja__seg" style="background:' + COLORES[i] + ';color:' + TINTA[i] + ';flex:' + ancho + ' 1 0">' +
+           '<b>' + pesos.format(t.precio) + '</b><span>' +
+           (ultima ? 'resto de la red' : desde + '–' + t.km + ' km') + '</span></div>';
+  }).join('');
+}
+
+function pintarCotiz() {
+  const caja = $('cotiz');
+  if (!estado.destino) { caja.hidden = true; return; }
+  caja.hidden = false;
+  const t = tarifaDeZona(estado.destino);
+  const km = distancia(estado.origen, estado.destino);
+
+  caja.classList.toggle('afuera', t === FUERA_DE_RED);
+  $('km').textContent = un.format(km) + ' km';
+  $('donde').textContent = estado.destino.nombre + ' · ' + estado.destino.detalle;
+
+  if (t === FUERA_DE_RED) {
+    $('chapa').textContent = 'Sin cobertura';
+    $('chapa').style.background = '';
+    $('precio').textContent = 'A convenir';
+  } else {
+    $('chapa').textContent = 'Tarifa ' + (t + 1);
+    $('chapa').style.background = COLORES[t];
+    $('chapa').style.color = TINTA[t];
+    $('precio').textContent = pesos.format(estado.tarifas[t].precio);
+  }
+}
+
+function agrupar() {
+  const grupos = [[], [], [], []], afuera = [];
+  zonas.forEach(z => {
+    const t = tarifaDeZona(z);
+    const it = { nombre: z.nombre, region: z.region, km: distancia(estado.origen, z) };
+    if (t === FUERA_DE_RED) afuera.push(it); else grupos[t].push(it);
+  });
+  grupos.forEach(g => g.sort((a, b) => a.km - b.km));
+  afuera.sort((a, b) => a.km - b.km);
+  return { grupos, afuera };
+}
+
+function pintarCobertura() {
+  const { grupos, afuera } = agrupar();
+  const cont = $('cobertura');
+  const abiertas = new Set([...cont.querySelectorAll('.fila.abierta')].map(f => f.dataset.id));
+  cont.innerHTML = '';
+
+  const fila = (id, color, titulo, items) => {
+    const d = document.createElement('div');
+    d.className = 'fila' + (abiertas.has(id) ? ' abierta' : '');
+    d.dataset.id = id;
+    d.innerHTML =
+      '<button class="fila__cab" type="button" aria-expanded="' + abiertas.has(id) + '">' +
+      '<span class="fila__c" style="background:' + color + '"></span>' +
+      '<span class="fila__n">' + titulo + '</span>' +
+      '<span class="fila__q">' + items.length + '</span>' +
+      '<svg class="fila__v" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>' +
+      '<div class="fila__cuerpo">' +
+      (items.length ? items.map(i => i.nombre).join(' · ') : 'Ninguna localidad cae acá.') + '</div>';
+    d.querySelector('.fila__cab').addEventListener('click', e => {
+      d.classList.toggle('abierta');
+      e.currentTarget.setAttribute('aria-expanded', d.classList.contains('abierta'));
+    });
+    cont.append(d);
+  };
+
+  estado.tarifas.forEach((t, i) => fila('t' + i, COLORES[i], 'Tarifa ' + (i + 1) + ' · ' + pesos.format(t.precio), grupos[i]));
+  fila('out', SIN, 'Fuera de la red', afuera);
+}
+
+$('copiar').addEventListener('click', async () => {
+  const { grupos, afuera } = agrupar();
+  const filas = [['localidad', 'region', 'tarifa', 'precio', 'km']];
+  grupos.forEach((g, i) => g.forEach(x =>
+    filas.push([x.nombre, x.region, 'T' + (i + 1), estado.tarifas[i].precio, un.format(x.km)])));
+  afuera.forEach(x => filas.push([x.nombre, x.region, 'fuera', '', un.format(x.km)]));
+  const tsv = filas.map(f => f.join('\t')).join('\n');
+  try {
+    await navigator.clipboard.writeText(tsv);
+    avisar('Tabla copiada: pegala en Excel o Sheets.');
+  } catch {
+    avisar('El navegador bloqueó el portapapeles.');
+  }
+});
+
+/* ════════════ Buscadores ════════════ */
+
+function conectarCombo(inputId, listaId, alElegir) {
+  const input = $(inputId), lista = $(listaId);
+
+  const cerrar = () => { lista.hidden = true; lista.innerHTML = ''; };
+
+  const abrir = () => {
+    const q = input.value.trim().toLowerCase();
+    const encontradas = enRed
+      .filter(z => !q || z.nombre.toLowerCase().includes(q))
+      .slice(0, 40);
+    if (!encontradas.length) {
+      lista.innerHTML = '<li class="vacio">No hay ningún barrio ni partido con ese nombre.</li>';
+      lista.hidden = false;
+      return;
+    }
+    lista.innerHTML = '';
+    encontradas.forEach(z => {
+      const li = document.createElement('li');
+      li.innerHTML = '<span>' + z.nombre + '</span><em>' + z.detalle + '</em>';
+      li.addEventListener('mousedown', ev => {
+        ev.preventDefault();
+        input.value = '';
+        cerrar();
+        alElegir(z);
+      });
+      lista.append(li);
+    });
+    lista.hidden = false;
+  };
+
+  input.addEventListener('focus', abrir);
+  input.addEventListener('input', abrir);
+  input.addEventListener('blur', () => setTimeout(cerrar, 120));
+  input.addEventListener('keydown', ev => { if (ev.key === 'Escape') { cerrar(); input.blur(); } });
+}
+
+conectarCombo('busca-origen', 'op-origen', z => {
+  estado.origen = z;
+  $('txt-origen').textContent = z.nombre;
+  $('chip-origen').querySelector('em').textContent = z.region;
+  repintar();
+  encuadrar();
+});
+
+conectarCombo('busca-destino', 'op-destino', z => {
+  estado.destino = z;
+  repintar();
+});
+
+document.querySelectorAll('.barra-modo button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.barra-modo button').forEach(o => o.classList.toggle('activo', o === b));
+  estado.modo = b.dataset.modo;
+  repintar();
+}));
+
+let tempo = null;
+function avisar(texto) {
+  const a = $('aviso');
+  a.textContent = texto;
+  a.hidden = false;
+  clearTimeout(tempo);
+  tempo = setTimeout(() => { a.hidden = true; }, 2600);
+}
+
+/* ════════════ Arranque ════════════ */
+
+function repintar() {
+  pintarZonas();
+  pintarAnillos();
+  pintarHud();
+  pintarFranja();
+  pintarCotiz();
+  pintarCobertura();
+}
+
+pintarTarifas();
+repintar();
+encuadrar();
+</script>
