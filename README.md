@@ -18,16 +18,35 @@ No hay build ni dependencias que instalar.
 
 ## El modelo de precios
 
-Precios vigentes, iguales para toda la red:
+Tarifario vigente desde el **1 de septiembre de 2026**, en dos modalidades y
+tres escalones por volumen semanal. El escalón se aplica solo sobre la
+liquidación de la semana, sin avisar ni firmar nada.
 
-| Tarifa | Alcance | Precio |
-|---|---|---|
-| T1 | hasta 9,5 km | $ 4.490 |
-| T2 | 9,5 a 21,5 km | $ 6.490 |
-| T3 | 21,5 a 43,5 km | $ 8.690 |
-| T4 | todo el resto de la red | $ 9.990 |
+**Factura A** — valores netos, el IVA se discrimina (entre paréntesis, el final):
 
-Dos reglas de negocio se aplican **antes** que la distancia:
+| Envíos por semana | T1 domicilio | T2 cercana | T3 lejana | T4 muy lejana |
+|---|---|---|---|---|
+| Hasta 200 | 4.124 (4.990) | 5.777 (6.990) | 7.430 (8.990) | 8.669 (10.490) |
+| Más de 200 | 3.917 (4.740) | 5.488 (6.640) | 7.058 (8.540) | 8.240 (9.970) |
+| Más de 300 | 3.711 (4.490) | 5.198 (6.290) | 6.686 (8.090) | 7.802 (9.440) |
+
+**Sin factura** — el valor de la tabla es el final, no se le suma nada:
+
+| Envíos por semana | T1 | T2 | T3 | T4 |
+|---|---|---|---|---|
+| Hasta 200 | 4.590 | 6.430 | 8.270 | 9.650 |
+| Más de 200 | 4.340 | 6.080 | 7.820 | 9.130 |
+| Más de 300 | 4.090 | 5.730 | 7.370 | 8.600 |
+
+Colecta bonificada desde 10 envíos diarios; por debajo, $6.000 + IVA por día.
+
+### Quién define la zona
+
+**Las zonas las define Mercado Envíos Flex, no ProCourrier**: se toman tal cual
+figuran en la liquidación de Mercado Libre. El mapa es una *estimación* de qué
+tarifa le va a tocar a cada barrio o partido, no la asignación oficial.
+
+Dos reglas de negocio se aplican antes que la distancia:
 
 1. La zona del propio depósito es siempre Tarifa 1.
 2. Para un depósito en CABA, toda la Capital es Tarifa 1 (verificado sobre los
@@ -80,7 +99,8 @@ red: nunca reciben precio.
 | | |
 |---|---|
 | **Depósito de origen** | Buscador de direcciones de CABA/GBA, click en el mapa o arrastrar el marcador. |
-| **Las 4 tarifas** | Radios de T1 a T3 y los 4 precios, editables. El mapa se repinta al instante. |
+| **Tu operación** | Envíos por semana y modalidad de facturación: de ahí sale el escalón. |
+| **Tus tarifas** | Los 4 precios del escalón vigente, con el neto y el final. |
 | **Cotizar un envío** | Dirección de destino → tarifa, precio y distancia. |
 | **Cobertura por tarifa** | Qué barrios y partidos caen en cada zona, con exportación a CSV. |
 | **Vistas** | `Anillos` (distancia pura), `Zonas` (barrios y partidos pintados) o `Ambas`. |

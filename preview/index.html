@@ -189,7 +189,130 @@ button, input { font: inherit; color: inherit; }
 .elegido i { flex: none; width: 7px; height: 7px; border-radius: 99px; background: var(--accent); }
 .elegido em { font-family: var(--dato); font-size: 10px; font-style: normal; color: var(--ink-3); margin-left: auto; }
 
+/* ─── Operación ─── */
+
+.campo-linea {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  font-size: 12.5px; color: var(--ink-2);
+}
+
+.campo-linea input {
+  width: 96px; padding: 8px 10px; text-align: right;
+  border-radius: var(--rs); border: 1px solid var(--line); background: var(--ground);
+  font-family: var(--dato); font-size: 12.5px; outline: none; -moz-appearance: textfield;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.campo-linea input::-webkit-outer-spin-button,
+.campo-linea input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.campo-linea input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,217,178,.13); }
+
+.opciones-fact {
+  display: flex; gap: 3px; margin-top: 11px; padding: 3px;
+  border-radius: var(--rs); background: var(--ground); border: 1px solid var(--line);
+}
+
+.opciones-fact button {
+  flex: 1; padding: 8px 6px; border: 0; border-radius: 7px;
+  background: transparent; color: var(--ink-2);
+  font-size: 12.5px; font-weight: 500; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.opciones-fact button:hover { color: var(--ink); }
+.opciones-fact button.activo { background: var(--accent); color: var(--accent-d); font-weight: 600; }
+
+.escalon {
+  margin-top: 11px; padding: 10px 12px;
+  border-radius: var(--rs);
+  background: rgba(0,217,178,.07); border: 1px solid rgba(0,217,178,.22);
+}
+
+.escalon b { display: block; font-size: 12.5px; }
+.escalon span { display: block; margin-top: 2px; font-size: 11px; line-height: 1.45; color: var(--ink-2); }
+
 /* ─── Tarifas ─── */
+
+.tar {
+  display: grid; grid-template-columns: 11px 1fr auto;
+  gap: 10px; align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tar:last-child { border-bottom: 0; }
+.tar__c { width: 11px; height: 11px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+.tar__n b { display: block; font-size: 12.5px; font-weight: 500; }
+.tar__n em { font-family: var(--dato); font-size: 10px; font-style: normal; color: var(--ink-3); }
+.tar__p { text-align: right; }
+.tar__p b { display: block; font-family: var(--dato); font-size: 15px; font-weight: 600; letter-spacing: -.02em; }
+.tar__p em { font-family: var(--dato); font-size: 9.5px; font-style: normal; color: var(--ink-3); }
+
+.ajustes { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+
+.ajustes summary {
+  font-size: 11.5px; color: var(--ink-3); cursor: pointer; list-style: none;
+}
+
+.ajustes summary::before { content: "▸ "; }
+.ajustes[open] summary::before { content: "▾ "; }
+.ajustes summary:hover { color: var(--ink-2); }
+
+/* ─── Qué incluye ─── */
+
+.incluye { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+.incluye li {
+  position: relative; padding-left: 15px;
+  font-size: 11.5px; line-height: 1.5; color: var(--ink-2);
+}
+
+.incluye li::before {
+  content: ""; position: absolute; left: 0; top: 6px;
+  width: 5px; height: 5px; border-radius: 99px; background: var(--accent);
+}
+
+.incluye b { color: var(--ink); font-weight: 500; }
+
+/* ─── Alta ─── */
+
+.bloque--alta { border-color: rgba(0,217,178,.3); }
+.paso--alta { background: var(--accent); color: var(--accent-d); }
+.paso--alta svg { width: 13px; height: 13px; }
+
+.form { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.form label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.form label.ancho { grid-column: 1 / -1; }
+
+.form span {
+  font-family: var(--dato);
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3);
+}
+
+.form input, .form select, .form textarea {
+  width: 100%; padding: 8px 10px;
+  border-radius: 8px; border: 1px solid var(--line); background: var(--ground);
+  color: var(--ink); font-size: 12.5px; font-family: inherit;
+  outline: none; resize: vertical;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.form input::placeholder, .form textarea::placeholder { color: #4a5a76; }
+.form input:focus, .form select:focus, .form textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,217,178,.13);
+}
+
+.error {
+  margin: 10px 0 0; padding: 8px 10px;
+  border-radius: 8px; background: rgba(228,87,46,.12); border: 1px solid rgba(228,87,46,.35);
+  font-size: 11.5px; color: #ffbfae;
+}
+
+.btn--wa {
+  background: #1f9c4d; border-color: #1f9c4d; color: #fff; font-weight: 600;
+}
+
+.btn--wa:hover { background: #24b359; border-color: #24b359; color: #fff; }
 
 .grilla-cab, .tarifa {
   display: grid;
@@ -457,6 +580,7 @@ button, input { font: inherit; color: inherit; }
 
 @media (max-width: 420px) {
   .grilla-cab, .tarifa { grid-template-columns: 1fr 58px 80px; }
+  .form { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -503,23 +627,52 @@ button, input { font: inherit; color: inherit; }
         <div class="bloque__cab">
           <span class="paso">2</span>
           <div>
-            <h2>Las 4 tarifas</h2>
-            <p>Hasta cuántos km llega cada una. La 4 es todo el resto de la red.</p>
+            <h2>Tu operación</h2>
+            <p>Cuántos envíos despachás por semana y cómo facturás.</p>
           </div>
         </div>
 
-        <div class="grilla-cab"><span></span><span>Hasta km</span><span>Precio</span></div>
-        <div id="tarifas"></div>
+        <label class="campo-linea" for="volumen">
+          <span>Envíos por semana</span>
+          <input type="number" id="volumen" value="150" min="1" max="5000" step="10">
+        </label>
 
-        <p class="nota">
-          <b>Radios calibrados con 62.933 envíos facturados</b> — reproducen el tramo
-          real en el 91,7% de los casos. Distancia en línea recta.
-        </p>
+        <div class="opciones-fact" role="group" aria-label="Modalidad de facturación">
+          <button type="button" data-modalidad="a" class="activo">Factura A</button>
+          <button type="button" data-modalidad="sf">Sin factura</button>
+        </div>
+
+        <div class="escalon" id="escalon"></div>
       </section>
 
       <section class="bloque">
         <div class="bloque__cab">
           <span class="paso">3</span>
+          <div>
+            <h2>Tus tarifas por envío</h2>
+            <p id="sub-tarifas">Vigentes desde el 1 de septiembre de 2026.</p>
+          </div>
+        </div>
+
+        <div id="tarifas"></div>
+
+        <p class="nota" id="nota-fact"></p>
+
+        <details class="ajustes">
+          <summary>Ajustar los radios de zona</summary>
+          <p class="nota">
+            Las zonas las define Mercado Envíos Flex, no ProCourrier. Estos radios
+            son una estimación calibrada con 62.933 envíos facturados: aciertan el
+            tramo real en el 91,7% de los casos.
+          </p>
+          <div class="grilla-cab"><span></span><span>Hasta km</span><span></span></div>
+          <div id="radios"></div>
+        </details>
+      </section>
+
+      <section class="bloque">
+        <div class="bloque__cab">
+          <span class="paso">4</span>
           <div>
             <h2>Cotizar un envío</h2>
             <p>A qué barrio o partido va el paquete.</p>
@@ -561,11 +714,99 @@ button, input { font: inherit; color: inherit; }
         </button>
       </section>
 
+      <section class="bloque">
+        <div class="bloque__cab">
+          <span class="paso paso--n">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+          </span>
+          <div>
+            <h2>Qué incluye</h2>
+            <p>Sin costo de alta ni mínimo de permanencia.</p>
+          </div>
+        </div>
+
+        <ul class="incluye">
+          <li><b>Colecta bonificada</b> desde 10 envíos diarios. Por debajo, $6.000 + IVA por día.</li>
+          <li><b>99% de SLA</b> medido por las plataformas de Mercado Libre.</li>
+          <li><b>Todo entregado antes de las 21 hs</b>, el mismo día que retiramos.</li>
+          <li><b>Soporte de 9 a 22</b>, directo, sin call center.</li>
+          <li><b>Liquidación semanal</b> envío por envío, con la zona aplicada.</li>
+          <li><b>Sin recargos</b> por clima ni por días de alta demanda.</li>
+          <li><b>Fulfillment opcional</b> en el depósito de Villa Madero.</li>
+        </ul>
+      </section>
+
+      <section class="bloque bloque--alta" id="alta">
+        <div class="bloque__cab">
+          <span class="paso paso--alta">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+          </span>
+          <div>
+            <h2>Trabajá con ProCourrier</h2>
+            <p>Cargá tus datos y te los mandamos por WhatsApp con tus tarifas.</p>
+          </div>
+        </div>
+
+        <div class="form">
+          <label for="f-nombre"><span>Nombre y apellido</span>
+            <input type="text" id="f-nombre" autocomplete="name" placeholder="Juan Pérez"></label>
+
+          <label for="f-tienda"><span>Tienda o empresa</span>
+            <input type="text" id="f-tienda" autocomplete="organization" placeholder="Mi Tienda SRL"></label>
+
+          <label for="f-tel"><span>WhatsApp</span>
+            <input type="tel" id="f-tel" autocomplete="tel" placeholder="11 5555-5555"></label>
+
+          <label for="f-mail"><span>Email</span>
+            <input type="email" id="f-mail" autocomplete="email" placeholder="juan@mitienda.com"></label>
+
+          <label for="f-dir"><span>Dirección del depósito</span>
+            <input type="text" id="f-dir" autocomplete="street-address" placeholder="Av. Warnes 1500"></label>
+
+          <label for="f-plataforma"><span>Plataforma</span>
+            <select id="f-plataforma">
+              <option>Mercado Envíos Flex</option>
+              <option>Mercado Shops</option>
+              <option>Tiendanube</option>
+              <option>Magento</option>
+              <option>Otra</option>
+            </select></label>
+
+          <label class="ancho" for="f-fulfillment"><span>¿Te interesa el fulfillment?</span>
+            <select id="f-fulfillment">
+              <option value="no">No por ahora</option>
+              <option value="si">Sí, quiero la propuesta</option>
+            </select></label>
+
+          <label class="ancho" for="f-nota"><span>Algo que quieras aclarar</span>
+            <textarea id="f-nota" rows="2" placeholder="Horario de corte, volumen estacional, lo que sea."></textarea></label>
+        </div>
+
+        <p class="error" id="f-error" hidden></p>
+
+        <button class="btn btn--wa" id="enviar-wa">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.5 0-9.97 4.47-9.97 9.97 0 1.76.46 3.48 1.34 5L2 22l5.2-1.36a9.93 9.93 0 0 0 4.84 1.24h.01c5.5 0 9.97-4.47 9.97-9.97S17.54 2 12.04 2Zm5.84 14.25c-.25.7-1.44 1.33-2 1.42-.51.08-1.16.11-1.87-.12-.43-.14-.99-.32-1.7-.63-2.99-1.29-4.94-4.3-5.09-4.5-.15-.2-1.22-1.62-1.22-3.09 0-1.47.77-2.19 1.04-2.49.27-.3.59-.37.79-.37.2 0 .4.002.57.01.18.008.43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.39-.44.52-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.36 1.46.3.15.47.12.65-.07.17-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.27.1 1.72.81 2.02.96.3.15.5.22.57.35.07.12.07.72-.18 1.42Z"/></svg>
+          Enviar por WhatsApp
+        </button>
+
+        <button class="btn" id="copiar-alta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+          Copiar el resumen
+        </button>
+
+        <p class="nota">
+          También podés escribirnos a <b>11 4088-9495</b> o <b>11 2406-4020</b>,
+          o entrar a <b>procourrier.com.ar</b>. El alta se resuelve en el día.
+        </p>
+      </section>
+
       <p class="pie">
-        La red llega hasta Luján, Dique Luján, Zárate, Campana y La Plata.
-        La zona del propio depósito siempre es Tarifa 1; para un depósito en CABA,
-        toda la Capital es Tarifa 1.
+        ProCourrier S.R.L. · Partner Certificado de Mercado Envíos Flex desde 2020,
+        repartiendo en Buenos Aires desde 2009. La red llega hasta Luján, Dique Luján,
+        Zárate, Campana y La Plata. Tarifas vigentes desde el 1 de septiembre de 2026,
+        sujetas a modificación con aviso previo.
       </p>
+
     </div>
   </aside>
 
@@ -625,17 +866,46 @@ const zonas = window.AMBA.features.map((f, i) => ({
 
 const enRed = zonas.filter(z => z.enRed);
 
+const NOMBRES = ['Zona domicilio', 'Zona cercana', 'Zona lejana', 'Zona muy lejana'];
+
+// Tarifario vigente desde el 01-09-2026. Factura A publica valores netos
+// (el IVA se discrimina); sin factura, el valor ya es el final.
+const TARIFARIO = {
+  a: {
+    nombre: 'Factura A', neta: true,
+    pie: 'Valores netos. El IVA se discrimina en la factura, así que lo tomás como crédito fiscal y tu costo real es el neto.',
+    escalones: [
+      { hasta: 200, netos: [4124, 5777, 7430, 8669], finales: [4990, 6990, 8990, 10490] },
+      { hasta: 300, netos: [3917, 5488, 7058, 8240], finales: [4740, 6640, 8540, 9970] },
+      { hasta: Infinity, netos: [3711, 5198, 6686, 7802], finales: [4490, 6290, 8090, 9440] },
+    ],
+  },
+  sf: {
+    nombre: 'Sin factura', neta: false,
+    pie: 'El valor de la tabla es el valor final por envío: no se le suma nada.',
+    escalones: [
+      { hasta: 200, netos: [4590, 6430, 8270, 9650] },
+      { hasta: 300, netos: [4340, 6080, 7820, 9130] },
+      { hasta: Infinity, netos: [4090, 5730, 7370, 8600] },
+    ],
+  },
+};
+
+const ESCALONES = ['Hasta 200 envíos', 'Más de 200 envíos', 'Más de 300 envíos'];
+
 const estado = {
   origen: zonas.find(z => z.nombre === 'Villa Crespo'),
   destino: zonas.find(z => z.nombre === 'Quilmes'),
-  tarifas: [
-    { km: 9.5,  precio: 4490 },
-    { km: 21.5, precio: 6490 },
-    { km: 43.5, precio: 8690 },
-    { km: null, precio: 9990 },
-  ],
+  radios: [9.5, 21.5, 43.5],   // hasta dónde llega cada una de las tres primeras
+  volumen: 150,
+  modalidad: 'a',
   modo: 'ambas',
 };
+
+const escalonIdx = () => estado.volumen > 300 ? 2 : estado.volumen > 200 ? 1 : 0;
+const fila = () => TARIFARIO[estado.modalidad].escalones[escalonIdx()];
+const precio = i => fila().netos[i];
+const precioFinal = i => (fila().finales || fila().netos)[i];
 
 /* ════════════ Geometría ════════════ */
 
@@ -662,7 +932,7 @@ const FUERA_DE_RED = -1;
 
 /** Índice de tarifa por distancia. La tarifa 4 no tiene tope. */
 function tarifaDe(km) {
-  for (let i = 0; i < 3; i++) if (km <= estado.tarifas[i].km) return i;
+  for (let i = 0; i < 3; i++) if (km <= estado.radios[i]) return i;
   return 3;
 }
 
@@ -676,8 +946,8 @@ function tarifaDeZona(z) {
   return tarifaDe(distancia(o, z));
 }
 
-const radiosOk = () => estado.tarifas.slice(0, 3)
-  .every((t, i) => t.km > 0 && (i === 0 || t.km > estado.tarifas[i - 1].km));
+const radiosOk = () => estado.radios
+  .every((r, i) => r > 0 && (i === 0 || r > estado.radios[i - 1]));
 
 /* ════════════ Proyección Mercator ════════════ */
 
@@ -908,19 +1178,19 @@ function pintarAnillos() {
   const ver = estado.modo !== 'zonas';
   const relleno = estado.modo === 'anillos';
 
-  estado.tarifas.slice(0, 3).forEach((t, i) => {
+  estado.radios.forEach((r, i) => {
     if (!ver) return;
     if (relleno) {
-      const desde = i === 0 ? null : caminoCirculo(estado.origen, estado.tarifas[i - 1].km);
+      const desde = i === 0 ? null : caminoCirculo(estado.origen, estado.radios[i - 1]);
       const p = el('path', {
-        d: caminoCirculo(estado.origen, t.km) + (desde || ''),
+        d: caminoCirculo(estado.origen, r) + (desde || ''),
         'fill-rule': 'evenodd', fill: COLORES[i], 'fill-opacity': .82,
         stroke: COLORES[i], 'stroke-width': 1.2, 'vector-effect': 'non-scaling-stroke',
       });
       gAnillos.append(p);
     } else {
       gAnillos.append(el('path', {
-        d: caminoCirculo(estado.origen, t.km),
+        d: caminoCirculo(estado.origen, r),
         fill: 'none', stroke: COLORES[i], 'stroke-width': 2,
         'stroke-dasharray': '7 6', 'vector-effect': 'non-scaling-stroke', opacity: .95,
       }));
@@ -935,15 +1205,14 @@ function pintarHud() {
 
   if (estado.modo !== 'zonas' && radiosOk()) {
     [0, 1, 2, 3].forEach(i => {
-      const t = estado.tarifas[i];
-      const desde = i === 0 ? 0 : estado.tarifas[i - 1].km;
+      const desde = i === 0 ? 0 : estado.radios[i - 1];
       // La T4 no tiene anillo: se rotula apenas afuera del último.
-      const radio = i === 3 ? estado.tarifas[2].km * 1.28 : desde + (t.km - desde) * .62;
+      const radio = i === 3 ? estado.radios[2] * 1.28 : desde + (estado.radios[i] - desde) * .62;
       const p = aPunto(estado.origen, radio, i === 3 ? -10 : 68 - i * 25);
       const [x, y] = aPantalla(p.lon, p.lat);
       if (x < -40 || y < -20 || x > W + 40 || y > H + 20) return;
 
-      const texto = 'T' + (i + 1) + ' · ' + pesos.format(t.precio) + (i === 3 ? ' · resto de la red' : '');
+      const texto = 'T' + (i + 1) + ' · ' + pesos.format(precio(i)) + (i === 3 ? ' · resto de la red' : '');
       const ancho = texto.length * 6.4 + 16;
       const g = el('g', { transform: 'translate(' + (x - ancho / 2) + ' ' + (y - 11) + ')' });
       g.append(el('rect', { width: ancho, height: 22, rx: 11, fill: COLORES[i],
@@ -976,7 +1245,7 @@ function mostrarGlobo(z, ev) {
   globo.innerHTML = '<strong>' + z.nombre + '</strong><em>' + z.detalle + '</em><br>' +
     '<b style="color:' + (t === FUERA_DE_RED ? '#93a4bf' : COLORES[t]) + '">' +
     (t === FUERA_DE_RED ? 'Fuera de la red'
-       : 'Tarifa ' + (t + 1) + ' · ' + pesos.format(estado.tarifas[t].precio)) +
+       : 'Tarifa ' + (t + 1) + ' · ' + pesos.format(precio(t))) +
     '</b> <em>· ' + km + ' km</em>';
   globo.hidden = false;
   moverGlobo(ev);
@@ -992,58 +1261,72 @@ function ocultarGlobo() { globo.hidden = true; }
 
 /* ════════════ Panel ════════════ */
 
+function pintarEscalon() {
+  const t = TARIFARIO[estado.modalidad];
+  const i = escalonIdx();
+  const base = t.escalones[0].netos[0];
+  const ahorro = base - precio(0);
+  $('escalon').innerHTML =
+    '<b>' + ESCALONES[i] + '</b>' +
+    (ahorro > 0
+      ? '<span>Ahorrás ' + pesos.format(ahorro) + ' por envío contra el primer escalón.</span>'
+      : '<span>Desde 201 envíos por semana el valor baja solo, sin avisar nada.</span>');
+  $('sub-tarifas').textContent = t.nombre + ' · ' + ESCALONES[i].toLowerCase() + ' por semana.';
+  $('nota-fact').textContent = t.pie;
+}
+
 function pintarTarifas() {
-  const c = $('tarifas');
-  c.innerHTML = '';
-  estado.tarifas.forEach((t, i) => {
-    const desde = i === 0 ? 0 : estado.tarifas[i - 1].km;
-    const ultima = t.km === null;
-    const fila = document.createElement('div');
-    fila.className = 'tarifa';
-    fila.innerHTML =
-      '<div class="tarifa__n"><span class="tarifa__c" style="background:' + COLORES[i] + '"></span>' +
-      '<span><b>Tarifa ' + (i + 1) + '</b><em data-rango="' + i + '">' +
-      (ultima ? 'resto de la red' : desde + '–' + t.km + ' km') + '</em></span></div>' +
-      (ultima
-        ? '<div class="sin-tope">sin tope</div>'
-        : '<div class="campo"><input type="number" id="km-' + i + '" data-km="' + i + '" value="' + t.km + '" min="0.5" step="0.5" aria-label="Km de la tarifa ' + (i + 1) + '"></div>') +
-      '<div class="campo campo--pesos"><input type="number" id="precio-' + i + '" data-precio="' + i + '" value="' + t.precio + '" min="0" step="100" aria-label="Precio de la tarifa ' + (i + 1) + '"></div>';
-    c.append(fila);
-  });
+  const neta = TARIFARIO[estado.modalidad].neta;
+  $('tarifas').innerHTML = [0, 1, 2, 3].map(i => {
+    const desde = i === 0 ? 0 : estado.radios[i - 1];
+    const rango = i === 3 ? 'resto de la red' : desde + '–' + estado.radios[i] + ' km';
+    return '<div class="tar">' +
+      '<span class="tar__c" style="background:' + COLORES[i] + '"></span>' +
+      '<div class="tar__n"><b>Tarifa ' + (i + 1) + '</b>' +
+      '<em>' + NOMBRES[i] + ' · ' + rango + '</em></div>' +
+      '<div class="tar__p"><b>' + pesos.format(precio(i)) + '</b>' +
+      '<em>' + (neta ? '+ IVA · ' + pesos.format(precioFinal(i)) + ' final' : 'valor final') + '</em></div>' +
+      '</div>';
+  }).join('');
+}
+
+function pintarRadios() {
+  const c = $('radios');
+  c.innerHTML = estado.radios.map((r, i) =>
+    '<div class="tarifa"><div class="tarifa__n">' +
+    '<span class="tarifa__c" style="background:' + COLORES[i] + '"></span>' +
+    '<span><b>Tarifa ' + (i + 1) + '</b><em data-rango="' + i + '"></em></span></div>' +
+    '<div class="campo"><input type="number" id="km-' + i + '" data-km="' + i + '" value="' + r +
+    '" min="0.5" step="0.5" aria-label="Radio de la tarifa ' + (i + 1) + '"></div><span></span></div>').join('');
 
   c.querySelectorAll('[data-km]').forEach(inp => inp.addEventListener('input', () => {
-    estado.tarifas[+inp.dataset.km].km = parseFloat(inp.value) || 0;
+    estado.radios[+inp.dataset.km] = parseFloat(inp.value) || 0;
     c.querySelectorAll('[data-km]').forEach(o => {
       const j = +o.dataset.km;
-      o.classList.toggle('mal', j > 0 && estado.tarifas[j].km <= estado.tarifas[j - 1].km);
+      o.classList.toggle('mal', j > 0 && estado.radios[j] <= estado.radios[j - 1]);
     });
-    if (radiosOk()) { rangos(); repintar(); }
+    if (radiosOk()) repintar();
     else avisar('Cada tarifa tiene que llegar más lejos que la anterior.');
   }));
-
-  c.querySelectorAll('[data-precio]').forEach(inp => inp.addEventListener('input', () => {
-    estado.tarifas[+inp.dataset.precio].precio = parseFloat(inp.value) || 0;
-    repintar();
-  }));
+  rangos();
 }
 
 function rangos() {
   document.querySelectorAll('[data-rango]').forEach(e => {
     const i = +e.dataset.rango;
-    if (estado.tarifas[i].km === null) return;
-    e.textContent = (i === 0 ? 0 : estado.tarifas[i - 1].km) + '–' + estado.tarifas[i].km + ' km';
+    e.textContent = (i === 0 ? 0 : estado.radios[i - 1]) + '–' + estado.radios[i] + ' km';
   });
 }
 
 function pintarFranja() {
-  const total = estado.tarifas[2].km || 1;
-  $('franja').innerHTML = estado.tarifas.map((t, i) => {
-    const desde = i === 0 ? 0 : estado.tarifas[i - 1].km;
-    const ultima = t.km === null;
-    const ancho = ultima ? 34 : Math.max(11, ((t.km - desde) / total) * 66);
-    return '<div class="franja__seg" style="background:' + COLORES[i] + ';color:' + TINTA[i] + ';flex:' + ancho + ' 1 0">' +
-           '<b>' + pesos.format(t.precio) + '</b><span>' +
-           (ultima ? 'resto de la red' : desde + '–' + t.km + ' km') + '</span></div>';
+  const total = estado.radios[2] || 1;
+  $('franja').innerHTML = [0, 1, 2, 3].map(i => {
+    const desde = i === 0 ? 0 : estado.radios[i - 1];
+    const ultima = i === 3;
+    const ancho = ultima ? 34 : Math.max(11, ((estado.radios[i] - desde) / total) * 66);
+    return '<div class="franja__seg" style="background:' + COLORES[i] + ';color:' + TINTA[i] +
+           ';flex:' + ancho + ' 1 0"><b>' + pesos.format(precio(i)) + '</b><span>' +
+           (ultima ? 'resto de la red' : desde + '–' + estado.radios[i] + ' km') + '</span></div>';
   }).join('');
 }
 
@@ -1066,7 +1349,7 @@ function pintarCotiz() {
     $('chapa').textContent = 'Tarifa ' + (t + 1);
     $('chapa').style.background = COLORES[t];
     $('chapa').style.color = TINTA[t];
-    $('precio').textContent = pesos.format(estado.tarifas[t].precio);
+    $('precio').textContent = pesos.format(precio(t));
   }
 }
 
@@ -1088,7 +1371,7 @@ function pintarCobertura() {
   const abiertas = new Set([...cont.querySelectorAll('.fila.abierta')].map(f => f.dataset.id));
   cont.innerHTML = '';
 
-  const fila = (id, color, titulo, items) => {
+  const filaCob = (id, color, titulo, items) => {
     const d = document.createElement('div');
     d.className = 'fila' + (abiertas.has(id) ? ' abierta' : '');
     d.dataset.id = id;
@@ -1107,15 +1390,16 @@ function pintarCobertura() {
     cont.append(d);
   };
 
-  estado.tarifas.forEach((t, i) => fila('t' + i, COLORES[i], 'Tarifa ' + (i + 1) + ' · ' + pesos.format(t.precio), grupos[i]));
-  fila('out', SIN, 'Fuera de la red', afuera);
+  [0, 1, 2, 3].forEach(i => filaCob('t' + i, COLORES[i],
+    'Tarifa ' + (i + 1) + ' · ' + pesos.format(precio(i)), grupos[i]));
+  filaCob('out', SIN, 'Fuera de la red', afuera);
 }
 
 $('copiar').addEventListener('click', async () => {
   const { grupos, afuera } = agrupar();
   const filas = [['localidad', 'region', 'tarifa', 'precio', 'km']];
   grupos.forEach((g, i) => g.forEach(x =>
-    filas.push([x.nombre, x.region, 'T' + (i + 1), estado.tarifas[i].precio, un.format(x.km)])));
+    filas.push([x.nombre, x.region, 'T' + (i + 1), precio(i), un.format(x.km)])));
   afuera.forEach(x => filas.push([x.nombre, x.region, 'fuera', '', un.format(x.km)]));
   const tsv = filas.map(f => f.join('\t')).join('\n');
   try {
@@ -1198,12 +1482,96 @@ function repintar() {
   pintarZonas();
   pintarAnillos();
   pintarHud();
+  pintarEscalon();
+  pintarTarifas();
   pintarFranja();
   pintarCotiz();
   pintarCobertura();
+  rangos();
+  sincronizarAlta();
 }
 
-pintarTarifas();
+/* ════════════ Operación: volumen y modalidad ════════════ */
+
+$('volumen').addEventListener('input', ev => {
+  estado.volumen = Math.max(1, parseInt(ev.target.value, 10) || 1);
+  repintar();
+});
+
+document.querySelectorAll('[data-modalidad]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-modalidad]').forEach(o => o.classList.toggle('activo', o === b));
+  estado.modalidad = b.dataset.modalidad;
+  repintar();
+}));
+
+/* ════════════ Alta de vendedor ════════════ */
+
+const WHATSAPP = '5491140889495';
+
+function resumenAlta() {
+  const v = id => ($(id).value || '').trim();
+  const faltan = [];
+  if (!v('f-nombre')) faltan.push('tu nombre');
+  if (!v('f-tel') && !v('f-mail')) faltan.push('un WhatsApp o un email');
+  if (faltan.length) return { faltan };
+
+  const t = TARIFARIO[estado.modalidad];
+  const lineas = [
+    'Hola ProCourrier, quiero dar de alta mi cuenta.',
+    '',
+    'Nombre: ' + v('f-nombre'),
+    v('f-tienda') ? 'Tienda: ' + v('f-tienda') : null,
+    v('f-tel') ? 'WhatsApp: ' + v('f-tel') : null,
+    v('f-mail') ? 'Email: ' + v('f-mail') : null,
+    'Depósito: ' + ((v('f-dir') ? v('f-dir') + ', ' : '') + estado.origen.nombre),
+    'Plataforma: ' + $('f-plataforma').value,
+    'Envíos por semana: ' + estado.volumen + ' (' + ESCALONES[escalonIdx()].toLowerCase() + ')',
+    'Facturación: ' + t.nombre,
+    'Fulfillment: ' + ($('f-fulfillment').value === 'si' ? 'sí, quiero la propuesta' : 'no por ahora'),
+    '',
+    'Tarifas que me muestra el cotizador:',
+    ...[0, 1, 2, 3].map(i => '  T' + (i + 1) + ' ' + NOMBRES[i] + ': ' + pesos.format(precio(i)) +
+        (t.neta ? ' + IVA (' + pesos.format(precioFinal(i)) + ' final)' : ' final')),
+    v('f-nota') ? '' : null,
+    v('f-nota') ? 'Nota: ' + v('f-nota') : null,
+  ].filter(l => l !== null);
+  return { texto: lineas.join('\n') };
+}
+
+function validar(r) {
+  const err = $('f-error');
+  if (!r.faltan) { err.hidden = true; return true; }
+  err.textContent = 'Falta ' + r.faltan.join(' y ') + '.';
+  err.hidden = false;
+  $('f-nombre').focus();
+  return false;
+}
+
+$('enviar-wa').addEventListener('click', () => {
+  const r = resumenAlta();
+  if (!validar(r)) return;
+  window.open('https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(r.texto), '_blank', 'noopener');
+});
+
+$('copiar-alta').addEventListener('click', async () => {
+  const r = resumenAlta();
+  if (!validar(r)) return;
+  try {
+    await navigator.clipboard.writeText(r.texto);
+    avisar('Resumen copiado: pegalo donde quieras mandarlo.');
+  } catch {
+    avisar('El navegador bloqueó el portapapeles.');
+  }
+});
+
+// La dirección del depósito arranca con la zona elegida en el mapa.
+function sincronizarAlta() {
+  const dir = $('f-dir');
+  if (!dir.dataset.tocado) dir.placeholder = 'Calle y altura en ' + estado.origen.nombre;
+}
+$('f-dir').addEventListener('input', ev => { ev.target.dataset.tocado = '1'; });
+
+pintarRadios();
 repintar();
 encuadrar();
 </script>
