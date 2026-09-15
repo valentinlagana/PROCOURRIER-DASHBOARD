@@ -31,6 +31,27 @@ async function bajar(url, que) {
   return res.json();
 }
 
+// Islas que la red no alcanza (Martín García figura en La Plata pero está a
+// 100 km, en medio del río): se descartan las piezas minúsculas y alejadas.
+const ISLA_MAX_KM2 = 5.0;
+
+function sinIslasLejanas(geom) {
+  if (geom.type !== 'MultiPolygon') return geom;
+  const area = anillo => Math.abs(anillo.reduce((a, [x1, y1], i) => {
+    const [x2, y2] = anillo[(i + 1) % anillo.length];
+    return a + (x1 * y2 - x2 * y1);
+  }, 0) / 2);
+  const cerca = (a, b) => {
+    const c = p => p[0].reduce((s, q) => [s[0] + q[0] / p[0].length, s[1] + q[1] / p[0].length], [0, 0]);
+    const [ax, ay] = c(a), [bx, by] = c(b);
+    return Math.hypot(ax - bx, ay - by) < 0.3;
+  };
+  const limite = ISLA_MAX_KM2 / (111.32 ** 2);
+  const partes = [...geom.coordinates].sort((p, q) => area(q[0]) - area(p[0]));
+  const quedan = partes.filter((p, i) => i === 0 || area(p[0]) >= limite || cerca(partes[0], p));
+  return quedan.length === partes.length ? geom : { type: 'MultiPolygon', coordinates: quedan };
+}
+
 function recortar(geom, nd = 5) {
   const r = o => Array.isArray(o) ? o.map(r) : Math.round(o * 10 ** nd) / 10 ** nd;
   return { ...geom, coordinates: r(geom.coordinates) };
@@ -55,7 +76,7 @@ const vistos = new Set();
 
 function agregar(nombre, geometry, region, comunaFuente) {
   const [lat, lon, cordon, enRed, comuna] = zonas[nombre];
-  const g = simplify({ type: 'Feature', properties: {}, geometry },
+  const g = simplify({ type: 'Feature', properties: {}, geometry: sinIslasLejanas(geometry) },
                      { tolerance: TOLERANCIA, highQuality: true, mutate: true });
   const props = { nombre, region, cordon, enRed: !!enRed, lat, lon };
   if (region === 'CABA') props.comuna = comuna ?? comunaFuente;

@@ -117,6 +117,11 @@ Lo último configurado queda guardado en el navegador (`localStorage`).
 Los bordes se simplifican con una tolerancia de 0,0001° (~11 m), así que
 coinciden con los límites oficiales incluso con mucho zoom.
 
+La Isla Martín García pertenece al partido de La Plata pero queda a 100 km, en
+medio del río y sólo accesible por lancha: el build descarta las piezas
+menores a 5 km² separadas más de 0,3° del resto del partido, para que no se
+pinten como zona con servicio.
+
 El centroide geométrico de San Fernando y Tigre cae en las islas del Delta, y
 el de La Plata en su sur rural; para esos partidos el punto de referencia es la
 cabecera, que es donde se reparte.

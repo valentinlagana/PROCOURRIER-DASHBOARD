@@ -6,6 +6,7 @@ Fuentes: datos abiertos del GCBA (barrios) e IGN (departamentos).
 """
 import json, os, unicodedata
 from shapely.geometry import shape, mapping
+from shapely.ops import unary_union
 
 SCRATCH = os.environ.get('PC_SCRATCH', '.')
 OUT = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -52,8 +53,23 @@ def redondear(o, nd=4):
 # 0,0001° ~ 11 m: el borde queda fiel al oficial incluso con mucho zoom.
 TOLERANCIA = 0.0001
 
+# Islas que la red no alcanza: se llega sólo por lancha. Cualquier pieza
+# suelta más chica que esto y a más de 0,3° del resto del partido se descarta.
+ISLA_MAX_KM2 = 5.0
+
+def sin_islas_lejanas(g):
+    """Saca las piezas minúsculas y alejadas (Martín García en La Plata)."""
+    if g.geom_type != "MultiPolygon":
+        return g
+    partes = sorted(g.geoms, key=lambda x: -x.area)
+    principal = partes[0]
+    grados2 = ISLA_MAX_KM2 / (111.32 ** 2)
+    quedan = [q for q in partes
+              if q.area >= grados2 or principal.distance(q) < 0.3]
+    return unary_union(quedan) if len(quedan) < len(partes) else g
+
 def salida(nombre, g, region, cordon, en_red, ref=None, **extra):
-    g = g.simplify(TOLERANCIA, preserve_topology=True)
+    g = sin_islas_lejanas(g).simplify(TOLERANCIA, preserve_topology=True)
     p = ref or (lambda c: (c.y, c.x))(g.representative_point())
     props = {"nombre": nombre, "region": region, "cordon": cordon, "enRed": en_red,
              "lat": round(p[0], 5), "lon": round(p[1], 5), **extra}

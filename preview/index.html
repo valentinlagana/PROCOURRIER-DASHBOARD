@@ -1015,7 +1015,7 @@ const gMundo = el('g', {});          // se mueve con el pan y el zoom
 
 // Mapa base: una sola imagen en Web Mercator, la misma proyección que los
 // polígonos, así que se ubica por sus esquinas y calza exacto.
-const MAPA = { lonMin: -59.765625, lonMax: -57.65625, latMin: -35.603719, latMax: -33.870416 };
+const MAPA = { lonMin: -59.941406, lonMax: -57.65625, latMin: -35.603719, latMax: -33.72434 };
 const [bx0, by0] = px(MAPA.lonMin, MAPA.latMax);
 const [bx1, by1] = px(MAPA.lonMax, MAPA.latMin);
 const base = el('image', {

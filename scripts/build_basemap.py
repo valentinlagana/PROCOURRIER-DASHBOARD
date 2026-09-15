@@ -6,7 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
 
 Z = 11
-LAT1, LON1, LAT2, LON2 = -33.90, -59.60, -35.50, -57.70
+# Cubre todo lo que se dibuja, islas del Delta incluidas, con un margen.
+LAT1, LON1, LAT2, LON2 = -33.76, -59.88, -35.48, -57.66
 BASE = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile'
 REF  = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile'
 
