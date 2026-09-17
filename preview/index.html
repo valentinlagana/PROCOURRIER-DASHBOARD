@@ -490,23 +490,21 @@ a.btn { text-decoration: none; }
 #mapa { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
 #mapa.arrastrando { cursor: grabbing; }
 
-.zona { transition: fill-opacity .2s; }
+.zona { transition: fill-opacity .2s; pointer-events: all; }
 .zona:hover { fill-opacity: .8; }
 
 .barra-modo {
-  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 2px; padding: 3px;
+  position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 2px; padding: 2px;
   border-radius: 99px;
-  background: rgba(12,12,12,.9);
-  border: 1px solid var(--line);
-  box-shadow: var(--sombra);
+  background: rgba(12,12,12,.86);
   backdrop-filter: blur(10px);
 }
 
 .barra-modo button {
-  padding: 6px 14px; border: 0; border-radius: 99px;
+  padding: 5px 13px; border: 0; border-radius: 99px;
   background: transparent; color: var(--ink-2);
-  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-size: 11.5px; font-weight: 500; cursor: pointer;
   transition: background .15s, color .15s;
 }
 
@@ -517,19 +515,11 @@ a.btn { text-decoration: none; }
 
 .franja {
   position: absolute; left: 16px; right: 16px; bottom: 16px;
-  max-width: 560px;
-  padding: 12px 14px 11px;
+  max-width: 480px;
+  padding: 8px;
   border-radius: var(--r);
-  background: rgba(12,12,12,.92);
-  border: 1px solid var(--line);
-  box-shadow: var(--sombra);
+  background: rgba(12,12,12,.86);
   backdrop-filter: blur(12px);
-}
-
-.franja__t {
-  font-family: var(--dato);
-  font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3);
-  margin-bottom: 9px;
 }
 
 .franja__barra { display: flex; gap: 3px; }
@@ -540,14 +530,14 @@ a.btn { text-decoration: none; }
   border-radius: 6px;
 }
 
-.franja__seg b { display: block; font-family: var(--dato); font-size: 12px; font-weight: 600; }
-.franja__seg span { display: block; font-family: var(--dato); font-size: 9.5px; opacity: .72; margin-top: 1px; }
+.franja__seg b { display: block; font-family: var(--dato); font-size: 11.5px; font-weight: 600; }
+.franja__seg span { display: block; font-family: var(--dato); font-size: 9px; opacity: .66; margin-top: 1px; }
 
 .credito {
-  position: absolute; z-index: 20; right: 10px; bottom: 8px;
-  padding: 3px 8px; border-radius: 6px;
-  background: rgba(255,255,255,.82);
-  color: #4a4a4a; font-size: 9.5px;
+  position: absolute; z-index: 20; right: 9px; bottom: 7px;
+  padding: 2px 7px; border-radius: 5px;
+  background: rgba(255,255,255,.7);
+  color: #7a7a7a; font-size: 9px;
 }
 
 .globo {
@@ -577,30 +567,16 @@ a.btn { text-decoration: none; }
   box-shadow: var(--sombra);
 }
 
-.ir-sitio {
-  position: absolute; top: 14px; left: 14px;
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 13px; border-radius: 99px;
-  background: var(--accent); color: #fff;
-  font-size: 12px; font-weight: 600; text-decoration: none;
-  box-shadow: var(--sombra);
-  transition: background .15s;
-}
-
-.ir-sitio:hover { background: #ff7d2b; }
-.ir-sitio svg { width: 12px; height: 12px; }
-
 .zoom {
-  position: absolute; top: 14px; right: 14px;
+  position: absolute; top: 13px; right: 13px;
   display: flex; flex-direction: column; gap: 2px;
-  padding: 3px; border-radius: 10px;
-  background: rgba(12,12,12,.9);
-  border: 1px solid var(--line);
+  padding: 2px; border-radius: 9px;
+  background: rgba(12,12,12,.86);
   backdrop-filter: blur(10px);
 }
 
 .zoom button {
-  width: 28px; height: 28px; border: 0; border-radius: 7px;
+  width: 26px; height: 26px; border: 0; border-radius: 7px;
   background: transparent; color: var(--ink-2);
   font-size: 16px; line-height: 1; cursor: pointer;
 }
@@ -618,10 +594,7 @@ a.btn { text-decoration: none; }
   .lienzo { order: 1; height: 48vh; }
   .rail { order: 2; border-right: 0; border-top: 1px solid var(--line); }
   .rail__scroll { overflow: visible; padding: 14px 14px 24px; }
-  /* En angosto la marca del panel ya lleva al sitio: el botón flotante sobra. */
-  .ir-sitio { display: none; }
-  .franja { left: 12px; right: 12px; bottom: 12px; padding: 10px 11px 9px; }
-  .franja__t { display: none; }
+  .franja { left: 12px; right: 12px; bottom: 12px; padding: 8px; }
   .franja__seg span { display: none; }
 }
 
@@ -871,10 +844,6 @@ a.btn { text-decoration: none; }
       <button data-modo="zonas">Zonas</button>
     </div>
 
-    <a class="ir-sitio" href="https://procourrier.com.ar" target="_blank" rel="noopener">
-      procourrier.com.ar
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
-    </a>
 
     <div class="zoom">
       <button id="mas" aria-label="Acercar">+</button>
@@ -882,7 +851,6 @@ a.btn { text-decoration: none; }
     </div>
 
     <div class="franja">
-      <div class="franja__t">Tarifas desde el depósito</div>
       <div class="franja__barra" id="franja"></div>
     </div>
 
@@ -899,9 +867,11 @@ a.btn { text-decoration: none; }
 
 /* ════════════ Datos y formato ════════════ */
 
-const COLORES = ['#fdbe6e', '#ef6a11', '#b8420a', '#6e2404'];
+// La escala va del blanco al negro pasando por el naranja de la marca:
+// los tres colores de ProCourrier y nada más.
+const COLORES = ['#fde3cb', '#f9b070', '#ef6a11', '#1a1a1a'];
 const TINTA = ['#0c0c0c', '#0c0c0c', '#ffffff', '#ffffff'];   // texto sobre cada tarifa
-const SIN = '#b4b0ac';
+const SIN = '#a8a4a0';
 
 const pesos = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
 const un = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 });
@@ -1101,7 +1071,7 @@ svg.append(gMundo, gHud);
 gMundo.append(base, gZonas, gAnillos);
 
 const caminos = zonas.map(z => {
-  const p = el('path', { d: camino(z.geom), class: 'zona', 'stroke-width': 1.1,
+  const p = el('path', { d: camino(z.geom), class: 'zona', 'stroke-width': .8,
                          'vector-effect': 'non-scaling-stroke' });
   p.addEventListener('pointerenter', ev => mostrarGlobo(z, ev));
   p.addEventListener('pointermove', ev => moverGlobo(ev));
@@ -1230,16 +1200,23 @@ function enZona(p, z) {
 
 /* ════════════ Pintado ════════════ */
 
+// Cada color tiene su propio peso: el claro necesita más relleno para
+// verse y el negro mucho menos para no tapar media provincia.
+const RELLENO = {
+  zonas:  [.82, .66, .56, .3],
+  ambas:  [.7, .56, .46, .24],
+};
+
 function pintarZonas() {
   const verZonas = estado.modo !== 'anillos';
-  const op = estado.modo === 'zonas' ? .72 : .58;
+  const escala = RELLENO[estado.modo === 'zonas' ? 'zonas' : 'ambas'];
   zonas.forEach((z, i) => {
     const t = tarifaDeZona(z);
     const afuera = t === FUERA_DE_RED;
     caminos[i].setAttribute('fill', afuera ? SIN : COLORES[t]);
-    caminos[i].setAttribute('fill-opacity', verZonas ? (afuera ? .3 : op) : .1);
-    caminos[i].setAttribute('stroke', afuera ? '#7d8da3' : '#ffffff');
-    caminos[i].setAttribute('stroke-opacity', verZonas ? .9 : .35);
+    caminos[i].setAttribute('fill-opacity', afuera ? 0 : (verZonas ? escala[t] : .07));
+    caminos[i].setAttribute('stroke', afuera ? '#c4c0bc' : '#ffffff');
+    caminos[i].setAttribute('stroke-opacity', afuera ? .22 : (verZonas ? .68 : .22));
   });
 }
 
@@ -1255,15 +1232,16 @@ function pintarAnillos() {
       const desde = i === 0 ? null : caminoCirculo(estado.origen, estado.radios[i - 1]);
       const p = el('path', {
         d: caminoCirculo(estado.origen, r) + (desde || ''),
-        'fill-rule': 'evenodd', fill: COLORES[i], 'fill-opacity': .82,
-        stroke: COLORES[i], 'stroke-width': 1.2, 'vector-effect': 'non-scaling-stroke',
+        'fill-rule': 'evenodd', fill: COLORES[i], 'fill-opacity': .78,
+        stroke: COLORES[i], 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke',
       });
       gAnillos.append(p);
     } else {
       gAnillos.append(el('path', {
         d: caminoCirculo(estado.origen, r),
-        fill: 'none', stroke: COLORES[i], 'stroke-width': 2,
-        'stroke-dasharray': '7 6', 'vector-effect': 'non-scaling-stroke', opacity: .95,
+        fill: 'none', stroke: COLORES[i], 'stroke-width': 1.4,
+        'stroke-dasharray': '3 7', 'stroke-linecap': 'round',
+        'vector-effect': 'non-scaling-stroke', opacity: .75,
       }));
     }
   });
@@ -1283,13 +1261,13 @@ function pintarHud() {
       const [x, y] = aPantalla(p.lon, p.lat);
       if (x < -40 || y < -20 || x > W + 40 || y > H + 20) return;
 
-      const texto = 'T' + (i + 1) + ' · ' + pesos.format(precio(i)) + (i === 3 ? ' · resto de la red' : '');
-      const ancho = texto.length * 6.4 + 16;
-      const g = el('g', { transform: 'translate(' + (x - ancho / 2) + ' ' + (y - 11) + ')' });
-      g.append(el('rect', { width: ancho, height: 22, rx: 11, fill: COLORES[i],
-                            stroke: '#0a0f1a', 'stroke-width': 1.5 }));
-      const tt = el('text', { x: ancho / 2, y: 15, 'text-anchor': 'middle', fill: TINTA[i],
-                              'font-family': 'IBM Plex Mono, monospace', 'font-size': 11, 'font-weight': 600 });
+      // Sólo el precio: el número alcanza, la tarifa ya la dice el color.
+      const texto = pesos.format(precio(i));
+      const ancho = texto.length * 6 + 14;
+      const g = el('g', { transform: 'translate(' + (x - ancho / 2) + ' ' + (y - 9) + ')' });
+      g.append(el('rect', { width: ancho, height: 19, rx: 9.5, fill: COLORES[i] }));
+      const tt = el('text', { x: ancho / 2, y: 13, 'text-anchor': 'middle', fill: TINTA[i],
+                              'font-family': 'IBM Plex Mono, monospace', 'font-size': 10.5, 'font-weight': 600 });
       tt.textContent = texto;
       g.append(tt);
       gHud.append(g);
@@ -1297,12 +1275,12 @@ function pintarHud() {
   }
 
   const [dx, dy] = aPantalla(estado.origen.lon, estado.origen.lat);
-  gHud.append(el('circle', { cx: dx, cy: dy, r: 11, fill: '#ef6a11', stroke: '#ffffff', 'stroke-width': 3 }));
+  gHud.append(el('circle', { cx: dx, cy: dy, r: 8.5, fill: '#ef6a11', stroke: '#ffffff', 'stroke-width': 2.5 }));
   gHud.append(el('circle', { cx: dx, cy: dy, r: 4, fill: '#0c0c0c' }));
 
   if (estado.destino) {
     const [qx, qy] = aPantalla(estado.destino.lon, estado.destino.lat);
-    gHud.append(el('circle', { cx: qx, cy: qy, r: 7, fill: '#0c0c0c', stroke: '#ffffff', 'stroke-width': 3 }));
+    gHud.append(el('circle', { cx: qx, cy: qy, r: 5.5, fill: '#0c0c0c', stroke: '#ffffff', 'stroke-width': 2.5 }));
   }
 }
 
