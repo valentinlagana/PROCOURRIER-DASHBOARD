@@ -57,7 +57,7 @@ button, input { font: inherit; color: inherit; }
 
 .app {
   display: grid;
-  grid-template-columns: 372px 1fr;
+  grid-template-columns: minmax(392px, 30%) 1fr;
   height: 100vh;
 }
 
@@ -80,6 +80,9 @@ button, input { font: inherit; color: inherit; }
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
 }
+
+/* Cada bloque conserva su alto: sin esto el flex los encoge al desbordar. */
+.rail__scroll > * { flex: none; }
 
 .rail__scroll::-webkit-scrollbar { width: 9px; }
 .rail__scroll::-webkit-scrollbar-thumb {
@@ -127,23 +130,26 @@ button, input { font: inherit; color: inherit; }
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r);
-  padding: 15px;
+  padding: 16px;
 }
 
-.bloque__cab { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 13px; }
-.bloque__cab h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: -.005em; }
-.bloque__cab p { margin: 2px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--ink-3); }
+/* La planilla es el bloque principal: todo lo que carga el vendedor entra acá. */
+.bloque--hoja { padding: 18px; }
 
-.paso {
-  flex: none; width: 21px; height: 21px; margin-top: 1px;
-  display: grid; place-items: center;
-  border-radius: 6px;
-  font-family: var(--dato); font-size: 11px; font-weight: 600;
-  color: var(--accent-d); background: var(--accent);
+.bloque__t { margin-bottom: 13px; }
+.bloque__t h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -.012em; }
+.bloque__t p { margin: 3px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-3); }
+
+/* Rótulo de tramo dentro de la planilla: una línea fina y nada más. */
+.tramo-t {
+  display: flex; align-items: center; gap: 9px;
+  margin: 18px 0 11px;
+  font-family: var(--dato);
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .11em; color: var(--ink-3);
 }
 
-.paso--n { background: var(--line); color: var(--ink-2); }
-.paso--n svg { width: 12px; height: 12px; }
+.tramo-t::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.tramo-t:first-of-type { margin-top: 0; }
 
 /* ─── Selector de localidad ─── */
 
@@ -192,59 +198,52 @@ button, input { font: inherit; color: inherit; }
 .nota { margin: 9px 0 0; font-size: 11px; line-height: 1.5; color: var(--ink-3); }
 .nota b { color: var(--ink-2); font-weight: 500; }
 
-.elegido {
-  display: flex; align-items: center; gap: 9px;
-  margin-top: 10px; padding: 9px 11px;
+/* ─── Campos de la planilla ─── */
+
+.nota { margin: 9px 0 0; font-size: 11px; line-height: 1.5; color: var(--ink-3); }
+.nota b { color: var(--ink-2); font-weight: 500; }
+
+.campos { display: grid; grid-template-columns: 1fr 1fr; gap: 11px 10px; }
+
+.campo-f { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.campo-f.ancho { grid-column: 1 / -1; }
+
+.campo-f > span {
+  font-family: var(--dato);
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3);
+}
+
+.campo-f input, .campo-f select, .campo-f textarea {
+  width: 100%;
+  padding: 9px 11px;
   border-radius: var(--rs);
-  background: rgba(239,106,17,.07);
-  border: 1px solid rgba(239,106,17,.22);
-  font-size: 12px; line-height: 1.35;
-}
-
-.elegido i { flex: none; width: 7px; height: 7px; border-radius: 99px; background: var(--accent); }
-.elegido em { font-family: var(--dato); font-size: 10px; font-style: normal; color: var(--ink-3); margin-left: auto; }
-
-/* ─── Operación ─── */
-
-.campo-linea {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  font-size: 12.5px; color: var(--ink-2);
-}
-
-.campo-linea input {
-  width: 96px; padding: 8px 10px; text-align: right;
-  border-radius: var(--rs); border: 1px solid var(--line); background: var(--ground);
-  font-family: var(--dato); font-size: 12.5px; outline: none; -moz-appearance: textfield;
+  border: 1px solid var(--line);
+  background: var(--ground);
+  color: var(--ink);
+  font-family: inherit; font-size: 12.5px;
+  outline: none; resize: vertical;
   transition: border-color .15s, box-shadow .15s;
 }
 
-.campo-linea input::-webkit-outer-spin-button,
-.campo-linea input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.campo-linea input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(239,106,17,.13); }
+.campo-f input::placeholder, .campo-f textarea::placeholder { color: #6e6e6e; }
 
-.opciones-fact {
-  display: flex; gap: 3px; margin-top: 11px; padding: 3px;
-  border-radius: var(--rs); background: var(--ground); border: 1px solid var(--line);
+.campo-f input:focus, .campo-f select:focus, .campo-f textarea:focus,
+.combo input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(239,106,17,.13);
 }
 
-.opciones-fact button {
-  flex: 1; padding: 8px 6px; border: 0; border-radius: 7px;
-  background: transparent; color: var(--ink-2);
-  font-size: 12.5px; font-weight: 500; cursor: pointer;
-  transition: background .15s, color .15s;
+/* Los select no traen flecha propia en todos los navegadores: la dibujamos. */
+.campo-f select {
+  appearance: none; -webkit-appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8a86' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  background-size: 13px;
 }
 
-.opciones-fact button:hover { color: var(--ink); }
-.opciones-fact button.activo { background: var(--accent); color: var(--accent-d); font-weight: 600; }
-
-.escalon {
-  margin-top: 11px; padding: 10px 12px;
-  border-radius: var(--rs);
-  background: rgba(239,106,17,.07); border: 1px solid rgba(239,106,17,.22);
-}
-
-.escalon b { display: block; font-size: 12.5px; }
-.escalon span { display: block; margin-top: 2px; font-size: 11px; line-height: 1.45; color: var(--ink-2); }
+.campo-f select option { background: var(--surface-2); color: var(--ink); }
 
 /* ─── Tarifas ─── */
 
@@ -289,45 +288,37 @@ button, input { font: inherit; color: inherit; }
 
 .incluye b { color: var(--ink); font-weight: 500; }
 
-/* ─── Alta ─── */
-
-.bloque--alta { border-color: rgba(239,106,17,.3); }
-.paso--alta { background: var(--accent); color: var(--accent-d); }
-.paso--alta svg { width: 13px; height: 13px; }
-
-.form { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-.form label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.form label.ancho { grid-column: 1 / -1; }
-
-.form span {
-  font-family: var(--dato);
-  font-size: 9.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3);
-}
-
-.form input, .form select, .form textarea {
-  width: 100%; padding: 8px 10px;
-  border-radius: 8px; border: 1px solid var(--line); background: var(--ground);
-  color: var(--ink); font-size: 12.5px; font-family: inherit;
-  outline: none; resize: vertical;
-  transition: border-color .15s, box-shadow .15s;
-}
-
-.form input::placeholder, .form textarea::placeholder { color: #6e6e6e; }
-.form input:focus, .form select:focus, .form textarea:focus {
-  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(239,106,17,.13);
-}
+/* ─── Envío del alta ─── */
 
 .error {
-  margin: 10px 0 0; padding: 8px 10px;
+  margin: 12px 0 0; padding: 8px 10px;
   border-radius: 8px; background: rgba(239,106,17,.14); border: 1px solid rgba(239,106,17,.4);
-  font-size: 11.5px; color: #f9c99b;
+  font-size: 11.5px; color: #fdbe6e;
 }
 
-.btn--wa {
-  background: #1f9c4d; border-color: #1f9c4d; color: #fff; font-weight: 600;
+/* Se nombra dos veces para pisar el .btn neutro, que se define más abajo. */
+.btn.btn--wa {
+  margin-top: 14px;
+  background: var(--accent); border-color: var(--accent); color: var(--accent-d);
+  font-size: 13px; font-weight: 600;
+  padding: 11px 14px;
 }
 
-.btn--wa:hover { background: #24b359; border-color: #24b359; color: #fff; }
+.btn.btn--wa:hover { background: #ff7c22; border-color: #ff7c22; color: var(--accent-d); }
+
+/* Acciones secundarias: texto y nada más, para no competir con el alta. */
+.sutiles {
+  display: flex; flex-wrap: wrap; gap: 4px 16px;
+  margin-top: 11px;
+}
+
+.sutil {
+  padding: 0; border: 0; background: none;
+  color: var(--ink-3); font-size: 11.5px; text-decoration: none;
+  cursor: pointer;
+}
+
+.sutil:hover { color: var(--accent); }
 
 .grilla-cab, .tarifa {
   display: grid;
@@ -405,10 +396,33 @@ button, input { font: inherit; color: inherit; }
 .factor input::-webkit-outer-spin-button,
 .factor input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
+/* ─── Add-on: cotizar un envío suelto ─── */
+
+.addon { padding: 0; overflow: hidden; }
+
+.addon > summary {
+  display: flex; align-items: center; gap: 9px;
+  padding: 13px 16px;
+  list-style: none; cursor: pointer;
+  font-size: 12.5px; font-weight: 500;
+}
+
+.addon > summary::-webkit-details-marker { display: none; }
+.addon > summary:hover { background: var(--line); }
+.addon > summary em {
+  font-family: var(--dato); font-size: 9.5px; font-style: normal;
+  text-transform: uppercase; letter-spacing: .09em; color: var(--ink-3);
+  margin-left: auto;
+}
+
+.addon__v { width: 12px; height: 12px; color: var(--ink-3); transition: transform .18s; }
+.addon[open] .addon__v { transform: rotate(180deg); }
+.addon__cuerpo { padding: 2px 16px 16px; }
+
 /* ─── Cotización ─── */
 
 .cotiz {
-  margin-top: 12px; padding: 14px;
+  margin-top: 11px; padding: 14px;
   border-radius: var(--rs);
   background: var(--ground);
   border: 1px solid var(--line);
@@ -604,6 +618,8 @@ a.btn { text-decoration: none; }
   .lienzo { order: 1; height: 48vh; }
   .rail { order: 2; border-right: 0; border-top: 1px solid var(--line); }
   .rail__scroll { overflow: visible; padding: 14px 14px 24px; }
+  /* En angosto la marca del panel ya lleva al sitio: el botón flotante sobra. */
+  .ir-sitio { display: none; }
   .franja { left: 12px; right: 12px; bottom: 12px; padding: 10px 11px 9px; }
   .franja__t { display: none; }
   .franja__seg span { display: none; }
@@ -611,7 +627,7 @@ a.btn { text-decoration: none; }
 
 @media (max-width: 420px) {
   .grilla-cab, .tarifa { grid-template-columns: 1fr 58px 80px; }
-  .form { grid-template-columns: 1fr; }
+  .campos { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -637,60 +653,122 @@ a.btn { text-decoration: none; }
 
     <div class="rail__scroll">
 
-      <section class="bloque">
-        <div class="bloque__cab">
-          <span class="paso">1</span>
-          <div>
-            <h2>Depósito de origen</h2>
-            <p>Elegí el barrio o partido, o marcalo con un click en el mapa.</p>
-          </div>
+      <!-- ══ La planilla: todo lo que carga el vendedor, en un solo cuadro ══ -->
+      <section class="bloque bloque--hoja" id="hoja">
+        <div class="bloque__t">
+          <h2>Trabajá con ProCourrier</h2>
+          <p>Completá la planilla y te devolvemos tus tarifas por WhatsApp,
+             con el alta resuelta en el día.</p>
         </div>
 
-        <div class="combo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input type="text" id="busca-origen" placeholder="Villa Crespo, Avellaneda, Tigre…" autocomplete="off" spellcheck="false">
-          <ul class="opciones" id="op-origen" hidden></ul>
+        <div class="tramo-t">Tu operación</div>
+
+        <div class="campos">
+          <label class="campo-f ancho" for="busca-origen">
+            <span>Depósito de origen</span>
+            <div class="combo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input type="text" id="busca-origen" value="Villa Crespo" placeholder="Villa Crespo, Avellaneda, Tigre…" autocomplete="off" spellcheck="false">
+              <ul class="opciones" id="op-origen" hidden></ul>
+            </div>
+          </label>
+
+          <label class="campo-f" for="tramo">
+            <span>Envíos por semana</span>
+            <select id="tramo">
+              <option value="0">Hasta 200</option>
+              <option value="1">De 201 a 300</option>
+              <option value="2">Más de 300</option>
+            </select>
+          </label>
+
+          <label class="campo-f" for="modalidad">
+            <span>Facturación</span>
+            <select id="modalidad">
+              <option value="a">Factura A</option>
+              <option value="sf">Sin factura</option>
+            </select>
+          </label>
+
+          <label class="campo-f ancho" for="f-dir">
+            <span>Dirección del depósito</span>
+            <input type="text" id="f-dir" autocomplete="street-address" placeholder="Calle y altura">
+          </label>
+
+          <label class="campo-f" for="f-plataforma">
+            <span>Plataforma</span>
+            <select id="f-plataforma">
+              <option>Mercado Envíos Flex</option>
+              <option>Mercado Shops</option>
+              <option>Tiendanube</option>
+              <option>Magento</option>
+              <option>Otra</option>
+            </select>
+          </label>
+
+          <label class="campo-f" for="f-fulfillment">
+            <span>Fulfillment</span>
+            <select id="f-fulfillment">
+              <option value="no">No por ahora</option>
+              <option value="si">Sí, quiero la propuesta</option>
+            </select>
+          </label>
         </div>
 
-        <div class="elegido" id="chip-origen">
-          <i></i><span id="txt-origen">Villa Crespo</span><em>ejemplo</em>
+        <div class="tramo-t">Tus datos</div>
+
+        <div class="campos">
+          <label class="campo-f" for="f-nombre">
+            <span>Nombre y apellido</span>
+            <input type="text" id="f-nombre" autocomplete="name" placeholder="Juan Pérez">
+          </label>
+
+          <label class="campo-f" for="f-tienda">
+            <span>Tienda o empresa</span>
+            <input type="text" id="f-tienda" autocomplete="organization" placeholder="Mi Tienda SRL">
+          </label>
+
+          <label class="campo-f" for="f-tel">
+            <span>WhatsApp</span>
+            <input type="tel" id="f-tel" autocomplete="tel" placeholder="11 5555-5555">
+          </label>
+
+          <label class="campo-f" for="f-mail">
+            <span>Email</span>
+            <input type="email" id="f-mail" autocomplete="email" placeholder="juan@mitienda.com">
+          </label>
+
+          <label class="campo-f ancho" for="f-nota">
+            <span>Algo que quieras aclarar</span>
+            <textarea id="f-nota" rows="2" placeholder="Horario de corte, volumen estacional, lo que sea."></textarea>
+          </label>
+        </div>
+
+        <p class="error" id="f-error" hidden></p>
+
+        <button class="btn btn--wa" id="enviar-wa">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.5 0-9.97 4.47-9.97 9.97 0 1.76.46 3.48 1.34 5L2 22l5.2-1.36a9.93 9.93 0 0 0 4.84 1.24h.01c5.5 0 9.97-4.47 9.97-9.97S17.54 2 12.04 2Zm5.84 14.25c-.25.7-1.44 1.33-2 1.42-.51.08-1.16.11-1.87-.12-.43-.14-.99-.32-1.7-.63-2.99-1.29-4.94-4.3-5.09-4.5-.15-.2-1.22-1.62-1.22-3.09 0-1.47.77-2.19 1.04-2.49.27-.3.59-.37.79-.37.2 0 .4.002.57.01.18.008.43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.39-.44.52-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.36 1.46.3.15.47.12.65-.07.17-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.27.1 1.72.81 2.02.96.3.15.5.22.57.35.07.12.07.72-.18 1.42Z"/></svg>
+          Enviar mis datos por WhatsApp
+        </button>
+
+        <div class="sutiles">
+          <button class="sutil" id="copiar-alta" type="button">Copiar el resumen</button>
+          <a class="sutil" href="https://procourrier.com.ar" target="_blank" rel="noopener">Ver procourrier.com.ar ↗</a>
+          <span class="sutil" style="cursor:default">11 4088-9495 · 11 2406-4020</span>
         </div>
       </section>
 
+      <!-- ══ La respuesta a la planilla: las cuatro tarifas ══ -->
       <section class="bloque">
-        <div class="bloque__cab">
-          <span class="paso">2</span>
-          <div>
-            <h2>Tu operación</h2>
-            <p>Cuántos envíos despachás por semana y cómo facturás.</p>
-          </div>
-        </div>
-
-        <label class="campo-linea" for="volumen">
-          <span>Envíos por semana</span>
-          <input type="number" id="volumen" value="150" min="1" max="5000" step="10">
-        </label>
-
-        <div class="opciones-fact" role="group" aria-label="Modalidad de facturación">
-          <button type="button" data-modalidad="a" class="activo">Factura A</button>
-          <button type="button" data-modalidad="sf">Sin factura</button>
-        </div>
-
-        <div class="escalon" id="escalon"></div>
-      </section>
-
-      <section class="bloque">
-        <div class="bloque__cab">
-          <span class="paso">3</span>
-          <div>
-            <h2>Tus tarifas por envío</h2>
-            <p id="sub-tarifas">Vigentes desde el 1 de septiembre de 2026.</p>
-          </div>
+        <div class="bloque__t">
+          <h2>Tus tarifas por envío</h2>
+          <p id="sub-tarifas">Vigentes desde el 1 de septiembre de 2026.</p>
         </div>
 
         <div id="tarifas"></div>
 
         <p class="nota" id="nota-fact"></p>
+        <p class="nota" id="nota-escalon"></p>
 
         <details class="ajustes">
           <summary>Ajustar los radios de zona</summary>
@@ -706,59 +784,59 @@ a.btn { text-decoration: none; }
         </details>
       </section>
 
+      <!-- ══ Add-on: un envío suelto, sólo como referencia ══ -->
+      <details class="bloque addon">
+        <summary>
+          <svg class="addon__v" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          Cotizar un envío suelto
+          <em>referencia</em>
+        </summary>
+
+        <div class="addon__cuerpo">
+          <label class="campo-f" for="busca-destino">
+            <span>A qué barrio o partido va</span>
+            <div class="combo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input type="text" id="busca-destino" value="Quilmes" placeholder="Quilmes, Palermo, Pilar…" autocomplete="off" spellcheck="false">
+              <ul class="opciones" id="op-destino" hidden></ul>
+            </div>
+          </label>
+
+          <div class="cotiz" id="cotiz">
+            <div class="cotiz__top">
+              <span class="cotiz__chapa" id="chapa">Tarifa 3</span>
+              <span class="cotiz__km" id="km">—</span>
+            </div>
+            <div class="cotiz__precio" id="precio">—</div>
+            <div class="cotiz__donde" id="donde">—</div>
+          </div>
+
+          <p class="nota">
+            Es una estimación por distancia: la zona final la define la plataforma
+            envío por envío.
+          </p>
+        </div>
+      </details>
+
+      <details class="bloque addon">
+        <summary>
+          <svg class="addon__v" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          Cobertura por tarifa
+          <em id="cuenta-red"></em>
+        </summary>
+
+        <div class="addon__cuerpo">
+          <div class="cobertura" id="cobertura"></div>
+          <div class="sutiles">
+            <button class="sutil" id="copiar" type="button">Copiar tabla para Excel</button>
+          </div>
+        </div>
+      </details>
+
       <section class="bloque">
-        <div class="bloque__cab">
-          <span class="paso">4</span>
-          <div>
-            <h2>Cotizar un envío</h2>
-            <p>A qué barrio o partido va el paquete.</p>
-          </div>
-        </div>
-
-        <div class="combo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input type="text" id="busca-destino" placeholder="Quilmes, Palermo, Pilar…" autocomplete="off" spellcheck="false">
-          <ul class="opciones" id="op-destino" hidden></ul>
-        </div>
-
-        <div class="cotiz" id="cotiz">
-          <div class="cotiz__top">
-            <span class="cotiz__chapa" id="chapa">Tarifa 3</span>
-            <span class="cotiz__km" id="km">—</span>
-          </div>
-          <div class="cotiz__precio" id="precio">—</div>
-          <div class="cotiz__donde" id="donde">—</div>
-        </div>
-      </section>
-
-      <section class="bloque">
-        <div class="bloque__cab">
-          <span class="paso paso--n">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-          </span>
-          <div>
-            <h2>Cobertura por tarifa</h2>
-            <p>Qué barrios y partidos caen en cada zona.</p>
-          </div>
-        </div>
-
-        <div class="cobertura" id="cobertura"></div>
-
-        <button class="btn" id="copiar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
-          Copiar tabla para Excel
-        </button>
-      </section>
-
-      <section class="bloque">
-        <div class="bloque__cab">
-          <span class="paso paso--n">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
-          </span>
-          <div>
-            <h2>Qué incluye</h2>
-            <p>Sin costo de alta ni mínimo de permanencia.</p>
-          </div>
+        <div class="bloque__t">
+          <h2>Qué incluye</h2>
+          <p>Sin costo de alta ni mínimo de permanencia.</p>
         </div>
 
         <ul class="incluye">
@@ -770,75 +848,6 @@ a.btn { text-decoration: none; }
           <li><b>Sin recargos</b> por clima ni por días de alta demanda.</li>
           <li><b>Fulfillment opcional</b> en el depósito de Villa Madero.</li>
         </ul>
-      </section>
-
-      <section class="bloque bloque--alta" id="alta">
-        <div class="bloque__cab">
-          <span class="paso paso--alta">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
-          </span>
-          <div>
-            <h2>Trabajá con ProCourrier</h2>
-            <p>Cargá tus datos y te los mandamos por WhatsApp con tus tarifas.</p>
-          </div>
-        </div>
-
-        <div class="form">
-          <label for="f-nombre"><span>Nombre y apellido</span>
-            <input type="text" id="f-nombre" autocomplete="name" placeholder="Juan Pérez"></label>
-
-          <label for="f-tienda"><span>Tienda o empresa</span>
-            <input type="text" id="f-tienda" autocomplete="organization" placeholder="Mi Tienda SRL"></label>
-
-          <label for="f-tel"><span>WhatsApp</span>
-            <input type="tel" id="f-tel" autocomplete="tel" placeholder="11 5555-5555"></label>
-
-          <label for="f-mail"><span>Email</span>
-            <input type="email" id="f-mail" autocomplete="email" placeholder="juan@mitienda.com"></label>
-
-          <label for="f-dir"><span>Dirección del depósito</span>
-            <input type="text" id="f-dir" autocomplete="street-address" placeholder="Av. Warnes 1500"></label>
-
-          <label for="f-plataforma"><span>Plataforma</span>
-            <select id="f-plataforma">
-              <option>Mercado Envíos Flex</option>
-              <option>Mercado Shops</option>
-              <option>Tiendanube</option>
-              <option>Magento</option>
-              <option>Otra</option>
-            </select></label>
-
-          <label class="ancho" for="f-fulfillment"><span>¿Te interesa el fulfillment?</span>
-            <select id="f-fulfillment">
-              <option value="no">No por ahora</option>
-              <option value="si">Sí, quiero la propuesta</option>
-            </select></label>
-
-          <label class="ancho" for="f-nota"><span>Algo que quieras aclarar</span>
-            <textarea id="f-nota" rows="2" placeholder="Horario de corte, volumen estacional, lo que sea."></textarea></label>
-        </div>
-
-        <p class="error" id="f-error" hidden></p>
-
-        <button class="btn btn--wa" id="enviar-wa">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.5 0-9.97 4.47-9.97 9.97 0 1.76.46 3.48 1.34 5L2 22l5.2-1.36a9.93 9.93 0 0 0 4.84 1.24h.01c5.5 0 9.97-4.47 9.97-9.97S17.54 2 12.04 2Zm5.84 14.25c-.25.7-1.44 1.33-2 1.42-.51.08-1.16.11-1.87-.12-.43-.14-.99-.32-1.7-.63-2.99-1.29-4.94-4.3-5.09-4.5-.15-.2-1.22-1.62-1.22-3.09 0-1.47.77-2.19 1.04-2.49.27-.3.59-.37.79-.37.2 0 .4.002.57.01.18.008.43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.39-.44.52-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.36 1.46.3.15.47.12.65-.07.17-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.27.1 1.72.81 2.02.96.3.15.5.22.57.35.07.12.07.72-.18 1.42Z"/></svg>
-          Enviar por WhatsApp
-        </button>
-
-        <a class="btn" href="https://procourrier.com.ar" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
-          Ver procourrier.com.ar
-        </a>
-
-        <button class="btn" id="copiar-alta">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
-          Copiar el resumen
-        </button>
-
-        <p class="nota">
-          También podés escribirnos a <b>11 4088-9495</b> o <b>11 2406-4020</b>,
-          o entrar a <b>procourrier.com.ar</b>. El alta se resuelve en el día.
-        </p>
       </section>
 
       <p class="pie">
@@ -948,18 +957,18 @@ const TARIFARIO = {
   },
 };
 
-const ESCALONES = ['Hasta 200 envíos', 'Más de 200 envíos', 'Más de 300 envíos'];
+const ESCALONES = ['Hasta 200 envíos', 'De 201 a 300 envíos', 'Más de 300 envíos'];
 
 const estado = {
   origen: zonas.find(z => z.nombre === 'Villa Crespo'),
   destino: zonas.find(z => z.nombre === 'Quilmes'),
   radios: [9.5, 21.5, 43.5],   // hasta dónde llega cada una de las tres primeras
-  volumen: 150,
+  tramo: 0,                    // escalón de volumen elegido en la planilla
   modalidad: 'a',
   modo: 'ambas',
 };
 
-const escalonIdx = () => estado.volumen > 300 ? 2 : estado.volumen > 200 ? 1 : 0;
+const escalonIdx = () => estado.tramo;
 const fila = () => TARIFARIO[estado.modalidad].escalones[escalonIdx()];
 const precio = i => fila().netos[i];
 const precioFinal = i => (fila().finales || fila().netos)[i];
@@ -1199,8 +1208,8 @@ function marcarDeposito(ev) {
     return;
   }
   estado.origen = dentro;
-  $('txt-origen').textContent = dentro.nombre;
-  $('chip-origen').querySelector('em').textContent = dentro.region;
+  $('busca-origen').value = dentro.nombre;
+  $('busca-origen').dataset.tipeando = '0';
   repintar();
   avisar('Depósito movido a ' + dentro.nombre + '.');
 }
@@ -1325,16 +1334,12 @@ function ocultarGlobo() { globo.hidden = true; }
 
 function pintarEscalon() {
   const t = TARIFARIO[estado.modalidad];
-  const i = escalonIdx();
-  const base = t.escalones[0].netos[0];
-  const ahorro = base - precio(0);
-  $('escalon').innerHTML =
-    '<b>' + ESCALONES[i] + '</b>' +
-    (ahorro > 0
-      ? '<span>Ahorrás ' + pesos.format(ahorro) + ' por envío contra el primer escalón.</span>'
-      : '<span>Desde 201 envíos por semana el valor baja solo, sin avisar nada.</span>');
-  $('sub-tarifas').textContent = t.nombre + ' · ' + ESCALONES[i].toLowerCase() + ' por semana.';
+  const ahorro = t.escalones[0].netos[0] - precio(0);
+  $('sub-tarifas').textContent = t.nombre + ' · ' + ESCALONES[escalonIdx()].toLowerCase() + ' por semana.';
   $('nota-fact').textContent = t.pie;
+  $('nota-escalon').textContent = ahorro > 0
+    ? 'Con este volumen ahorrás ' + pesos.format(ahorro) + ' por envío contra el primer escalón.'
+    : 'Desde 201 envíos por semana el valor baja solo, sin pedir nada.';
 }
 
 function pintarTarifas() {
@@ -1480,7 +1485,9 @@ function conectarCombo(inputId, listaId, alElegir) {
   const cerrar = () => { lista.hidden = true; lista.innerHTML = ''; };
 
   const abrir = () => {
-    const q = input.value.trim().toLowerCase();
+    // Mientras no se tipee, la lista se muestra completa aunque el campo
+    // ya tenga escrita la localidad elegida.
+    const q = input.dataset.tipeando === '1' ? input.value.trim().toLowerCase() : '';
     const encontradas = enRed
       .filter(z => !q || z.nombre.toLowerCase().includes(q))
       .slice(0, 40);
@@ -1495,7 +1502,8 @@ function conectarCombo(inputId, listaId, alElegir) {
       li.innerHTML = '<span>' + z.nombre + '</span><em>' + z.detalle + '</em>';
       li.addEventListener('mousedown', ev => {
         ev.preventDefault();
-        input.value = '';
+        input.value = z.nombre;
+        input.dataset.tipeando = '0';
         cerrar();
         alElegir(z);
       });
@@ -1504,16 +1512,14 @@ function conectarCombo(inputId, listaId, alElegir) {
     lista.hidden = false;
   };
 
-  input.addEventListener('focus', abrir);
-  input.addEventListener('input', abrir);
+  input.addEventListener('focus', () => { input.dataset.tipeando = '0'; input.select(); abrir(); });
+  input.addEventListener('input', () => { input.dataset.tipeando = '1'; abrir(); });
   input.addEventListener('blur', () => setTimeout(cerrar, 120));
   input.addEventListener('keydown', ev => { if (ev.key === 'Escape') { cerrar(); input.blur(); } });
 }
 
 conectarCombo('busca-origen', 'op-origen', z => {
   estado.origen = z;
-  $('txt-origen').textContent = z.nombre;
-  $('chip-origen').querySelector('em').textContent = z.region;
   repintar();
   encuadrar();
 });
@@ -1522,6 +1528,8 @@ conectarCombo('busca-destino', 'op-destino', z => {
   estado.destino = z;
   repintar();
 });
+
+$('cuenta-red').textContent = enRed.length + ' zonas';
 
 document.querySelectorAll('.barra-modo button').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.barra-modo button').forEach(o => o.classList.toggle('activo', o === b));
@@ -1555,16 +1563,15 @@ function repintar() {
 
 /* ════════════ Operación: volumen y modalidad ════════════ */
 
-$('volumen').addEventListener('input', ev => {
-  estado.volumen = Math.max(1, parseInt(ev.target.value, 10) || 1);
+$('tramo').addEventListener('change', ev => {
+  estado.tramo = +ev.target.value;
   repintar();
 });
 
-document.querySelectorAll('[data-modalidad]').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('[data-modalidad]').forEach(o => o.classList.toggle('activo', o === b));
-  estado.modalidad = b.dataset.modalidad;
+$('modalidad').addEventListener('change', ev => {
+  estado.modalidad = ev.target.value;
   repintar();
-}));
+});
 
 /* ════════════ Alta de vendedor ════════════ */
 
@@ -1587,7 +1594,7 @@ function resumenAlta() {
     v('f-mail') ? 'Email: ' + v('f-mail') : null,
     'Depósito: ' + ((v('f-dir') ? v('f-dir') + ', ' : '') + estado.origen.nombre),
     'Plataforma: ' + $('f-plataforma').value,
-    'Envíos por semana: ' + estado.volumen + ' (' + ESCALONES[escalonIdx()].toLowerCase() + ')',
+    'Volumen: ' + ESCALONES[escalonIdx()].toLowerCase() + ' por semana',
     'Facturación: ' + t.nombre,
     'Fulfillment: ' + ($('f-fulfillment').value === 'si' ? 'sí, quiero la propuesta' : 'no por ahora'),
     '',
