@@ -13,7 +13,9 @@
 
 /* ─────────────────────────── Configuración ─────────────────────────── */
 
-const COLORS = ['#ffd166', '#f79a3e', '#e4572e', '#a4243b'];
+const COLORS = ['#fdbe6e', '#ef6a11', '#b8420a', '#6e2404'];
+// Tinta legible sobre cada color de la rampa (los dos ultimos son oscuros).
+const TINTAS = ['#0c0c0c', '#0c0c0c', '#ffffff', '#ffffff'];
 const GRIS_SIN_RED = '#9aa7ba';
 
 const NOMBRES = ['Zona domicilio', 'Zona cercana', 'Zona lejana', 'Zona muy lejana'];
@@ -256,7 +258,7 @@ function etiqueta(radioKm, rumbo, i, texto) {
     interactive: false,
     icon: L.divIcon({
       className: '', iconSize: [0, 0],
-      html: `<div class="ring-tag" style="background:${COLORS[i]}">T${i + 1} · ${texto}</div>`,
+      html: `<div class="ring-tag" style="background:${COLORS[i]};color:${TINTAS[i]}">T${i + 1} · ${texto}</div>`,
     }),
   }).addTo(capaTags);
 }
@@ -401,6 +403,7 @@ function recotizar() {
   } else {
     $('#quote-badge').textContent = `Tarifa ${idx + 1}`;
     $('#quote-badge').style.background = COLORS[idx];
+    $('#quote-badge').style.color = TINTAS[idx];
     $('#quote-price').textContent = money.format(precio(idx));
   }
 }

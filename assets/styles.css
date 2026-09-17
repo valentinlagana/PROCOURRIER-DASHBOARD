@@ -1,23 +1,23 @@
 /* ProCourrier · Cotizador AMBA
-   Paleta: panel oscuro + mapa claro. Las 4 tarifas usan una rampa cálida
-   ascendente (más intenso = más caro), que no compite con el azul del río. */
+   Paleta de marca: naranja #ef6a11, negro #0c0c0c y blanco. Las 4 tarifas
+   usan una rampa del naranja institucional (más oscuro = más caro). */
 
 :root {
-  --bg:            #070c16;
-  --panel:         #0d1524;
-  --panel-2:       #121c2e;
-  --line:          #1e2b42;
-  --line-soft:     #18243a;
-  --ink:           #eef3fb;
-  --ink-2:         #9aabc4;
-  --ink-3:         #647391;
-  --accent:        #00d9b2;
-  --accent-ink:    #04352c;
+  --bg:            #0c0c0c;
+  --panel:         #161616;
+  --panel-2:       #1f1f1f;
+  --line:          #2e2e2e;
+  --line-soft:     #232323;
+  --ink:           #ffffff;
+  --ink-2:         #b4b0ac;
+  --ink-3:         #8e8a86;
+  --accent:        #ef6a11;
+  --accent-ink:    #ffffff;
 
-  --t1: #ffd166;
-  --t2: #f79a3e;
-  --t3: #e4572e;
-  --t4: #a4243b;
+  --t1: #fdbe6e;
+  --t2: #ef6a11;
+  --t3: #b8420a;
+  --t4: #6e2404;
 
   --radius:   14px;
   --radius-s: 10px;
@@ -84,7 +84,23 @@ button, input { font: inherit; color: inherit; }
   gap: 12px;
   padding: 20px 20px 18px;
   border-bottom: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
 }
+
+.brand:hover { background: var(--panel-2); }
+
+/* Flecha "ir al sitio": aparece al pasar el mouse por la marca. */
+.brand__ir {
+  width: 15px;
+  height: 15px;
+  margin-left: auto;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity .15s;
+}
+
+.brand:hover .brand__ir { opacity: 1; }
 
 .brand__mark {
   width: 40px;
@@ -93,7 +109,7 @@ button, input { font: inherit; color: inherit; }
   place-items: center;
   border-radius: 12px;
   color: var(--accent-ink);
-  background: linear-gradient(145deg, var(--accent), #14b8e8);
+  background: var(--accent);
   box-shadow: 0 8px 20px -10px var(--accent);
 }
 
@@ -184,7 +200,7 @@ button, input { font: inherit; color: inherit; }
 
 .search input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 217, 178, .13);
+  box-shadow: 0 0 0 3px rgba(239, 106, 17, .13);
 }
 
 .search input:disabled { opacity: .45; cursor: not-allowed; }
@@ -281,8 +297,8 @@ button, input { font: inherit; color: inherit; }
   margin-top: 10px;
   padding: 9px 11px;
   border-radius: var(--radius-s);
-  background: rgba(0, 217, 178, .07);
-  border: 1px solid rgba(0, 217, 178, .22);
+  background: rgba(239, 106, 17, .07);
+  border: 1px solid rgba(239, 106, 17, .22);
   font-size: 12px;
   color: var(--ink);
   line-height: 1.35;
@@ -294,7 +310,7 @@ button, input { font: inherit; color: inherit; }
   height: 8px;
   border-radius: 99px;
   background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 217, 178, .2);
+  box-shadow: 0 0 0 3px rgba(239, 106, 17, .2);
 }
 
 /* ───────────── Tarifas ───────────── */
@@ -369,10 +385,10 @@ button, input { font: inherit; color: inherit; }
 
 .field input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 217, 178, .13);
+  box-shadow: 0 0 0 3px rgba(239, 106, 17, .13);
 }
 
-.field input.is-bad { border-color: #e4572e; }
+.field input.is-bad { border-color: #b8420a; }
 
 .field--money input { padding-left: 22px; text-align: right; }
 
@@ -434,8 +450,8 @@ button, input { font: inherit; color: inherit; }
   margin-top: 11px;
   padding: 10px 12px;
   border-radius: var(--radius-s);
-  background: rgba(0, 217, 178, .07);
-  border: 1px solid rgba(0, 217, 178, .22);
+  background: rgba(239, 106, 17, .07);
+  border: 1px solid rgba(239, 106, 17, .22);
 }
 
 .escalon b { display: block; font-size: 12.5px; }
@@ -581,7 +597,7 @@ button, input { font: inherit; color: inherit; }
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: .02em;
-  color: #1a1206;
+  color: #0c0c0c;
   background: var(--t1);
 }
 
@@ -814,7 +830,7 @@ button, input { font: inherit; color: inherit; }
   font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: #1a1206;
+  color: #0c0c0c;
   border: 1.5px solid rgba(255,255,255,.9);
   box-shadow: 0 4px 12px -4px rgba(0,0,0,.5);
   transform: translate(-50%, -50%);

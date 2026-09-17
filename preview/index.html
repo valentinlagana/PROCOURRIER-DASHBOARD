@@ -4,26 +4,30 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 
 <style>
-/* ProCourrier · consola de tarifas del AMBA.
-   Diseño de tema único: consola de despacho sobre fondo nocturno. */
+/* ProCourrier · cotizador de envíos del AMBA.
+   Los colores salen del tarifario de la empresa: naranja #ef6a11, negro
+   #0c0c0c y blanco, con los grises y el hueso de la misma pieza. */
 
 :root {
-  --ground:   #0a0f1a;
-  --surface:  #121b2b;
-  --surface-2:#18243a;
-  --line:     #223149;
-  --line-2:   #2d3f5c;
-  --ink:      #eaf0f9;
-  --ink-2:    #93a4bf;
-  --ink-3:    #5d6e8c;
-  --accent:   #00d9b2;
-  --accent-d: #04352c;
+  --ground:   #0c0c0c;
+  --surface:  #161616;
+  --surface-2:#1f1f1f;
+  --line:     #2e2e2e;
+  --line-2:   #3d3d3d;
+  --ink:      #ffffff;
+  --ink-2:    #b4b0ac;
+  --ink-3:    #8e8a86;
+  --accent:   #ef6a11;
+  --accent-d: #ffffff;
 
-  --t1: #ffd166;
-  --t2: #f79a3e;
-  --t3: #e4572e;
-  --t4: #a4243b;
-  --sin: #8496ae;
+  /* Las cuatro tarifas, del mismo naranja: más oscuro, más caro.
+     La 2 es el naranja de marca; los pasos están separados para que se
+     distingan sobre el mapa claro. */
+  --t1: #fdbe6e;
+  --t2: #ef6a11;
+  --t3: #b8420a;
+  --t4: #6e2404;
+  --sin: #b4b0ac;
 
   --ui:   Archivo, "Helvetica Neue", Arial, sans-serif;
   --dato: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -88,6 +92,17 @@ button, input { font: inherit; color: inherit; }
   display: flex; align-items: center; gap: 11px;
   padding: 18px 19px 16px;
   border-bottom: 1px solid var(--line);
+  color: inherit; text-decoration: none;
+  transition: background .15s;
+}
+
+.marca:hover { background: var(--surface-2); }
+.marca:hover .marca__ir { color: var(--accent); }
+
+.marca__ir {
+  width: 14px; height: 14px; margin-left: auto;
+  color: var(--ink-3);
+  transition: color .15s;
 }
 
 .marca__logo {
@@ -95,7 +110,7 @@ button, input { font: inherit; color: inherit; }
   display: grid; place-items: center;
   border-radius: 11px;
   color: var(--accent-d);
-  background: linear-gradient(145deg, var(--accent), #17b9e0);
+  background: var(--accent);
 }
 
 .marca__logo svg { width: 21px; height: 21px; }
@@ -151,13 +166,13 @@ button, input { font: inherit; color: inherit; }
 }
 
 .combo input::placeholder { color: var(--ink-3); }
-.combo input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,217,178,.13); }
+.combo input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(239,106,17,.13); }
 
 .opciones {
   position: absolute; z-index: 40; top: calc(100% + 5px); left: 0; right: 0;
   margin: 0; padding: 4px; list-style: none;
   max-height: 224px; overflow-y: auto;
-  background: #0f1828;
+  background: #1f1f1f;
   border: 1px solid var(--line);
   border-radius: var(--rs);
   box-shadow: var(--sombra);
@@ -181,8 +196,8 @@ button, input { font: inherit; color: inherit; }
   display: flex; align-items: center; gap: 9px;
   margin-top: 10px; padding: 9px 11px;
   border-radius: var(--rs);
-  background: rgba(0,217,178,.07);
-  border: 1px solid rgba(0,217,178,.22);
+  background: rgba(239,106,17,.07);
+  border: 1px solid rgba(239,106,17,.22);
   font-size: 12px; line-height: 1.35;
 }
 
@@ -205,7 +220,7 @@ button, input { font: inherit; color: inherit; }
 
 .campo-linea input::-webkit-outer-spin-button,
 .campo-linea input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.campo-linea input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,217,178,.13); }
+.campo-linea input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(239,106,17,.13); }
 
 .opciones-fact {
   display: flex; gap: 3px; margin-top: 11px; padding: 3px;
@@ -225,7 +240,7 @@ button, input { font: inherit; color: inherit; }
 .escalon {
   margin-top: 11px; padding: 10px 12px;
   border-radius: var(--rs);
-  background: rgba(0,217,178,.07); border: 1px solid rgba(0,217,178,.22);
+  background: rgba(239,106,17,.07); border: 1px solid rgba(239,106,17,.22);
 }
 
 .escalon b { display: block; font-size: 12.5px; }
@@ -276,7 +291,7 @@ button, input { font: inherit; color: inherit; }
 
 /* ─── Alta ─── */
 
-.bloque--alta { border-color: rgba(0,217,178,.3); }
+.bloque--alta { border-color: rgba(239,106,17,.3); }
 .paso--alta { background: var(--accent); color: var(--accent-d); }
 .paso--alta svg { width: 13px; height: 13px; }
 
@@ -297,15 +312,15 @@ button, input { font: inherit; color: inherit; }
   transition: border-color .15s, box-shadow .15s;
 }
 
-.form input::placeholder, .form textarea::placeholder { color: #4a5a76; }
+.form input::placeholder, .form textarea::placeholder { color: #6e6e6e; }
 .form input:focus, .form select:focus, .form textarea:focus {
-  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,217,178,.13);
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(239,106,17,.13);
 }
 
 .error {
   margin: 10px 0 0; padding: 8px 10px;
-  border-radius: 8px; background: rgba(228,87,46,.12); border: 1px solid rgba(228,87,46,.35);
-  font-size: 11.5px; color: #ffbfae;
+  border-radius: 8px; background: rgba(239,106,17,.14); border: 1px solid rgba(239,106,17,.4);
+  font-size: 11.5px; color: #f9c99b;
 }
 
 .btn--wa {
@@ -359,7 +374,7 @@ button, input { font: inherit; color: inherit; }
 
 .campo input::-webkit-outer-spin-button,
 .campo input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.campo input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,217,178,.13); }
+.campo input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(239,106,17,.13); }
 .campo input.mal { border-color: var(--t3); }
 .campo--pesos input { padding-left: 20px; }
 
@@ -448,12 +463,15 @@ button, input { font: inherit; color: inherit; }
 
 .btn:hover { background: var(--line); color: var(--ink); border-color: var(--line-2); }
 .btn svg { width: 14px; height: 14px; }
+a.btn { text-decoration: none; }
 
-.pie { margin: 2px; font-size: 10.5px; line-height: 1.55; color: #46577a; }
+.pie { margin: 2px; font-size: 10.5px; line-height: 1.55; color: #6e6e6e; }
+.pie a { color: var(--accent); text-decoration: none; }
+.pie a:hover { text-decoration: underline; }
 
 /* ─── Mapa ─── */
 
-.lienzo { position: relative; min-width: 0; overflow: hidden; background: #e8ecf1; }
+.lienzo { position: relative; min-width: 0; overflow: hidden; background: #f5f3f0; }
 
 #mapa { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
 #mapa.arrastrando { cursor: grabbing; }
@@ -465,7 +483,7 @@ button, input { font: inherit; color: inherit; }
   position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
   display: flex; gap: 2px; padding: 3px;
   border-radius: 99px;
-  background: rgba(18,27,43,.9);
+  background: rgba(12,12,12,.9);
   border: 1px solid var(--line);
   box-shadow: var(--sombra);
   backdrop-filter: blur(10px);
@@ -488,7 +506,7 @@ button, input { font: inherit; color: inherit; }
   max-width: 560px;
   padding: 12px 14px 11px;
   border-radius: var(--r);
-  background: rgba(18,27,43,.92);
+  background: rgba(12,12,12,.92);
   border: 1px solid var(--line);
   box-shadow: var(--sombra);
   backdrop-filter: blur(12px);
@@ -514,15 +532,15 @@ button, input { font: inherit; color: inherit; }
 .credito {
   position: absolute; z-index: 20; right: 10px; bottom: 8px;
   padding: 3px 8px; border-radius: 6px;
-  background: rgba(255,255,255,.78);
-  color: #4a5a70; font-size: 9.5px;
+  background: rgba(255,255,255,.82);
+  color: #4a4a4a; font-size: 9.5px;
 }
 
 .globo {
   position: absolute; z-index: 30;
   padding: 8px 11px;
   border-radius: 9px;
-  background: rgba(10,15,26,.96);
+  background: rgba(12,12,12,.96);
   border: 1px solid var(--line);
   box-shadow: var(--sombra);
   font-size: 12px; line-height: 1.5;
@@ -539,17 +557,30 @@ button, input { font: inherit; color: inherit; }
   position: absolute; z-index: 40; bottom: 16px; left: 50%;
   transform: translateX(-50%);
   padding: 9px 16px; border-radius: 99px;
-  background: rgba(18,27,43,.96);
+  background: rgba(12,12,12,.96);
   border: 1px solid var(--line-2);
   font-size: 12.5px;
   box-shadow: var(--sombra);
 }
 
+.ir-sitio {
+  position: absolute; top: 14px; left: 14px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: 99px;
+  background: var(--accent); color: #fff;
+  font-size: 12px; font-weight: 600; text-decoration: none;
+  box-shadow: var(--sombra);
+  transition: background .15s;
+}
+
+.ir-sitio:hover { background: #ff7d2b; }
+.ir-sitio svg { width: 12px; height: 12px; }
+
 .zoom {
   position: absolute; top: 14px; right: 14px;
   display: flex; flex-direction: column; gap: 2px;
   padding: 3px; border-radius: 10px;
-  background: rgba(18,27,43,.9);
+  background: rgba(12,12,12,.9);
   border: 1px solid var(--line);
   backdrop-filter: blur(10px);
 }
@@ -587,7 +618,7 @@ button, input { font: inherit; color: inherit; }
 <div class="app">
 
   <aside class="rail">
-    <header class="marca">
+    <a class="marca" href="https://procourrier.com.ar" target="_blank" rel="noopener">
       <div class="marca__logo" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 13h10V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v7Z"/>
@@ -599,7 +630,10 @@ button, input { font: inherit; color: inherit; }
         <strong>ProCourrier</strong>
         <span>Cotizador AMBA</span>
       </div>
-    </header>
+      <svg class="marca__ir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 17 17 7M9 7h8v8"/>
+      </svg>
+    </a>
 
     <div class="rail__scroll">
 
@@ -791,6 +825,11 @@ button, input { font: inherit; color: inherit; }
           Enviar por WhatsApp
         </button>
 
+        <a class="btn" href="https://procourrier.com.ar" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
+          Ver procourrier.com.ar
+        </a>
+
         <button class="btn" id="copiar-alta">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
           Copiar el resumen
@@ -803,6 +842,8 @@ button, input { font: inherit; color: inherit; }
       </section>
 
       <p class="pie">
+        <a href="https://procourrier.com.ar" target="_blank" rel="noopener">procourrier.com.ar</a>
+        · 11 4088-9495 · 11 2406-4020<br>
         ProCourrier S.R.L. · Partner Certificado de Mercado Envíos Flex desde 2020,
         repartiendo en Buenos Aires desde 2009. La red llega hasta Luján, Dique Luján,
         Zárate, Campana y La Plata. Tarifas vigentes desde el 1 de septiembre de 2026,
@@ -820,6 +861,11 @@ button, input { font: inherit; color: inherit; }
       <button data-modo="anillos">Anillos</button>
       <button data-modo="zonas">Zonas</button>
     </div>
+
+    <a class="ir-sitio" href="https://procourrier.com.ar" target="_blank" rel="noopener">
+      procourrier.com.ar
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </a>
 
     <div class="zoom">
       <button id="mas" aria-label="Acercar">+</button>
@@ -844,9 +890,9 @@ button, input { font: inherit; color: inherit; }
 
 /* ════════════ Datos y formato ════════════ */
 
-const COLORES = ['#ffd166', '#f79a3e', '#e4572e', '#a4243b'];
-const TINTA = ['#17110a', '#17110a', '#fff3ec', '#ffeef0'];   // texto sobre cada tarifa
-const SIN = '#8496ae';
+const COLORES = ['#fdbe6e', '#ef6a11', '#b8420a', '#6e2404'];
+const TINTA = ['#0c0c0c', '#0c0c0c', '#ffffff', '#ffffff'];   // texto sobre cada tarifa
+const SIN = '#b4b0ac';
 
 const pesos = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
 const un = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 });
@@ -1177,12 +1223,12 @@ function enZona(p, z) {
 
 function pintarZonas() {
   const verZonas = estado.modo !== 'anillos';
-  const op = estado.modo === 'zonas' ? .62 : .5;
+  const op = estado.modo === 'zonas' ? .72 : .58;
   zonas.forEach((z, i) => {
     const t = tarifaDeZona(z);
     const afuera = t === FUERA_DE_RED;
     caminos[i].setAttribute('fill', afuera ? SIN : COLORES[t]);
-    caminos[i].setAttribute('fill-opacity', verZonas ? (afuera ? .22 : op) : .1);
+    caminos[i].setAttribute('fill-opacity', verZonas ? (afuera ? .3 : op) : .1);
     caminos[i].setAttribute('stroke', afuera ? '#7d8da3' : '#ffffff');
     caminos[i].setAttribute('stroke-opacity', verZonas ? .9 : .35);
   });
@@ -1242,12 +1288,12 @@ function pintarHud() {
   }
 
   const [dx, dy] = aPantalla(estado.origen.lon, estado.origen.lat);
-  gHud.append(el('circle', { cx: dx, cy: dy, r: 11, fill: '#00d9b2', stroke: '#ffffff', 'stroke-width': 3 }));
-  gHud.append(el('circle', { cx: dx, cy: dy, r: 4, fill: '#04352c' }));
+  gHud.append(el('circle', { cx: dx, cy: dy, r: 11, fill: '#ef6a11', stroke: '#ffffff', 'stroke-width': 3 }));
+  gHud.append(el('circle', { cx: dx, cy: dy, r: 4, fill: '#0c0c0c' }));
 
   if (estado.destino) {
     const [qx, qy] = aPantalla(estado.destino.lon, estado.destino.lat);
-    gHud.append(el('circle', { cx: qx, cy: qy, r: 7, fill: '#0a0f1a', stroke: '#ffffff', 'stroke-width': 3 }));
+    gHud.append(el('circle', { cx: qx, cy: qy, r: 7, fill: '#0c0c0c', stroke: '#ffffff', 'stroke-width': 3 }));
   }
 }
 
