@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confirmar Asistencia</title>
+  <style>
+    /* ==================================================================
+       PALETA PROCOURRIER: negro, blanco y naranja.
+       Rojo solo para "HOY NO VOY" (mismo codigo que el tablero del Sheet).
+       Si alguna vez cambia el naranja de la marca, se cambia aca y listo.
+       ================================================================== */
+    :root{
+      --naranja: #E8641A;
+      --naranja-osc: #C4500F;
+      --naranja-suave: #FDEFE5;
+      --rojo: #D62828;
+      --negro: #111111;
+      --gris-t: #6B7280;
+      --linea: #E6E6E6;
+      --fondo: #F4F4F5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, system-ui, Arial, sans-serif;
+      margin: 0; padding: 16px; background: var(--fondo); color: var(--negro);
+    }
+    .contenedor { max-width: 460px; margin: 0 auto; }
+
+    /* ---------------- Marca ---------------- */
+    .marca {
+      background: #fff; border: 1px solid var(--linea); border-radius: 16px;
+      padding: 16px 18px 18px; margin-bottom: 14px; text-align: center;
+    }
+    .marca svg { width: 186px; height: auto; display: block; margin: 0 auto 10px; }
+    .marca h1 { font-size: 1.22rem; margin: 0 0 4px; font-weight: 800; }
+    .marca p { margin: 0; color: var(--gris-t); font-size: .87rem; line-height: 1.4; }
+    .marca b { color: var(--naranja); }
+
+    /* ---------------- Tarjeta del formulario ---------------- */
+    .tarjeta {
+      background: #fff; border: 1px solid var(--linea);
+      border-radius: 16px; padding: 18px;
+    }
+    .paso {
+      font-weight: 800; font-size: .78rem; letter-spacing: .09em;
+      text-transform: uppercase; color: var(--gris-t);
+      margin: 0 0 9px; display: flex; align-items: center; gap: 8px;
+    }
+    .paso i {
+      width: 19px; height: 19px; border-radius: 50%; background: var(--naranja);
+      color: #fff; font-style: normal; font-size: .68rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex: 0 0 19px;
+    }
+
+    .zonas { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .zona {
+      padding: 14px; border: 1.5px solid var(--linea); border-radius: 12px;
+      background: #fff; font-size: 1rem; font-weight: 700; color: var(--negro);
+      cursor: pointer; text-align: center; transition: all .15s;
+    }
+    .zona.activa {
+      border-color: var(--naranja); background: var(--naranja-suave);
+      color: var(--naranja-osc);
+    }
+
+    select, input {
+      width: 100%; padding: 14px; font-size: 1.05rem; color: var(--negro);
+      border: 1.5px solid var(--linea); border-radius: 12px; background: #fff;
+    }
+    input#pin { letter-spacing: .5em; font-weight: 800; text-align: center; }
+    select:focus, input:focus { outline: none; border-color: var(--naranja); }
+    .sep { height: 16px; }
+
+    .botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+    button.accion {
+      padding: 16px 8px; font-size: 1rem; font-weight: 800; line-height: 1.2;
+      border: none; border-radius: 13px; cursor: pointer; text-align: center;
+    }
+    /* button.accion pone border:none, asi que estas dos van con el mismo peso
+       (elemento + clase) para poder ganarle el borde al boton blanco. */
+    button.btn-voy   { background: #fff; color: var(--negro); border: 2.5px solid var(--negro); }
+    button.btn-novoy { background: var(--rojo); color: #fff; box-shadow: 0 4px 12px rgba(214,40,40,.3); }
+    button.accion:disabled { opacity: .45; }
+
+    #estado {
+      margin-top: 16px; padding: 13px; border-radius: 12px; font-size: .95rem;
+      display: none; white-space: pre-wrap; text-align: center; line-height: 1.4;
+      border: 1.5px solid var(--linea); background: #fff;
+    }
+    .ok    { display: block !important; border-color: var(--naranja) !important;
+             background: var(--naranja-suave) !important; color: var(--naranja-osc) !important; }
+    .error { display: block !important; border-color: var(--rojo) !important;
+             background: #FDECEC !important; color: #96201F !important; }
+    .info  { display: block !important; color: var(--gris-t) !important; }
+
+    .reloj { text-align: center; color: var(--gris-t); font-size: .8rem; margin-top: 14px; }
+    .oculto { display: none; }
+
+    /* ---------------- Carteles emergentes ---------------- */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(17,17,17,.62);
+      display: none; justify-content: center;
+      /* flex-start + overflow: si el cartel es mas alto que la pantalla se
+         puede scrollear; si entra, el "margin: auto" del modal lo centra. */
+      align-items: flex-start; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 14px; z-index: 10;
+    }
+    .overlay.visible { display: flex; }
+    .modal {
+      background: #fff; border-radius: 20px; max-width: 400px; width: 100%;
+      margin: auto; overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,.4);
+    }
+    .modal .cab { background: var(--negro); padding: 18px; text-align: center; }
+    .modal .cab .icono { font-size: 1.7rem; }
+    .modal .cab h2 { color: #fff; margin: 6px 0 0; font-size: 1.1rem; font-weight: 800; }
+    .modal .cuerpo { padding: 16px; }
+    .modal .cuerpo > p {
+      margin: 0 0 14px; font-size: .9rem; color: var(--gris-t);
+      text-align: center; line-height: 1.45;
+    }
+
+    .opcion {
+      width: 100%; text-align: left; border-radius: 13px; padding: 13px 14px;
+      margin-bottom: 9px; border: 1.5px solid var(--linea); background: #fff;
+      display: flex; gap: 11px; align-items: center; cursor: pointer;
+      font-family: inherit;
+    }
+    .opcion .ico {
+      width: 36px; height: 36px; border-radius: 10px; flex: 0 0 36px;
+      display: flex; align-items: center; justify-content: center; font-size: 1.05rem;
+    }
+    .opcion b { display: block; font-size: .93rem; font-weight: 800;
+                color: var(--negro); line-height: 1.25; }
+    .opcion small { display: block; font-size: .76rem; color: var(--gris-t);
+                    margin-top: 2px; line-height: 1.3; }
+    .opcion:disabled { opacity: .5; }
+
+    .op-entrega { border-color: var(--naranja); background: var(--naranja-suave); }
+    .op-entrega .ico { background: var(--naranja); color: #fff; }
+    .op-trae .ico    { background: var(--negro); color: #fff; }
+    .op-sin .ico     { background: #EFEFF1; color: var(--negro); }
+
+    .destacado {
+      background: var(--naranja-suave); border: 1.5px dashed var(--naranja);
+      border-radius: 12px; padding: 13px; font-weight: 800;
+      color: var(--naranja-osc); font-size: .9rem; line-height: 1.4;
+      text-align: center; margin-bottom: 13px;
+    }
+    .aviso-soporte {
+      background: #FAFAFA; border-left: 3px solid var(--negro); border-radius: 9px;
+      padding: 11px; font-size: .83rem; color: #333; line-height: 1.45;
+      margin-bottom: 14px; text-align: left;
+    }
+    .anotado {
+      background: #fff; border: 1.5px solid var(--linea); border-radius: 12px;
+      padding: 12px; text-align: center; font-size: .86rem;
+      color: var(--gris-t); margin-bottom: 13px;
+    }
+    .anotado b { color: var(--negro); }
+
+    /* Chips de motivos frecuentes + campo de texto */
+    .motivos { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+    .chip {
+      padding: 9px 12px; border-radius: 999px; border: 1.5px solid var(--linea);
+      background: #fff; font-size: .84rem; font-weight: 700; color: var(--negro);
+      cursor: pointer; font-family: inherit;
+    }
+    .chip.activo {
+      border-color: var(--naranja); background: var(--naranja-suave);
+      color: var(--naranja-osc);
+    }
+    textarea#motivo {
+      width: 100%; padding: 12px; font-size: .97rem; font-family: inherit;
+      border: 1.5px solid var(--linea); border-radius: 12px; resize: vertical;
+      min-height: 78px; color: var(--negro);
+    }
+    textarea#motivo:focus { outline: none; border-color: var(--naranja); }
+    .btn-enviar {
+      width: 100%; padding: 14px; font-size: 1rem; font-weight: 800;
+      border: none; border-radius: 12px; background: var(--naranja);
+      color: #fff; cursor: pointer; font-family: inherit; margin-top: 12px;
+    }
+    .btn-enviar:disabled { opacity: .45; }
+
+    .btn-cerrar {
+      width: 100%; padding: 14px; font-size: 1rem; font-weight: 800;
+      border: none; border-radius: 12px; background: var(--negro);
+      color: #fff; cursor: pointer; font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+
+    <div class="marca">
+      <!-- Logo Procourrier dibujado en SVG: no depende de ningun link externo. -->
+      <svg viewBox="0 0 300 128" xmlns="http://www.w3.org/2000/svg" aria-label="Procourrier">
+        <g transform="translate(94,2) scale(0.62)">
+          <g fill="none" stroke="#111" stroke-width="9" stroke-linecap="square">
+            <path d="M6 60 L20 47 L6 34"/><path d="M28 60 L42 47 L28 34"/>
+            <path d="M50 60 L64 47 L50 34"/><path d="M72 60 L86 47 L72 34"/>
+            <path d="M94 60 L108 47 L94 34"/>
+          </g>
+          <rect x="66" y="6" width="96" height="82" rx="9" fill="#E8641A" stroke="#111" stroke-width="8"/>
+          <path d="M162 30 h30 l24 24 v34 h-54 z" fill="#fff" stroke="#111" stroke-width="8" stroke-linejoin="round"/>
+          <path d="M170 40 h20 l16 16 h-36 z" fill="#fff" stroke="#111" stroke-width="6" stroke-linejoin="round"/>
+          <circle cx="102" cy="90" r="20" fill="#fff" stroke="#111" stroke-width="8"/>
+          <circle cx="182" cy="90" r="20" fill="#fff" stroke="#111" stroke-width="8"/>
+          <g transform="translate(84,-42)">
+            <path d="M30 6 L56 20 L56 48 L30 62 L4 48 L4 20 Z" fill="#fff" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+            <path d="M4 20 L30 34 L56 20" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+            <path d="M30 34 L30 62" fill="none" stroke="#111" stroke-width="7"/>
+            <path d="M18 12 L44 26 L44 44" fill="none" stroke="#F2C200" stroke-width="9" stroke-linejoin="round"/>
+          </g>
+          <path d="M-6 116 C70 100 190 100 262 116 C190 110 70 110 -6 116 Z" fill="#111"/>
+        </g>
+        <text x="150" y="106" text-anchor="middle" font-family="Arial Black, Arial, sans-serif"
+              font-size="34" font-weight="900" font-style="italic">
+          <tspan fill="#111">Pro</tspan><tspan fill="#E8641A">courrier</tspan>
+        </text>
+        <text x="150" y="124" text-anchor="middle" font-family="Arial, sans-serif"
+              font-size="12.5" letter-spacing="1.1" fill="#111">LOGÍSTICA PROFESIONAL</text>
+      </svg>
+
+      <h1>Confirmar asistencia</h1>
+      <p>Confirmá antes de las <b>13:30</b> para que te asignen paquetes.</p>
+    </div>
+
+    <div class="tarjeta">
+      <div class="paso"><i>1</i>Elegí tu zona</div>
+      <div class="zonas" id="zonas"></div>
+
+      <div id="bloqueNombre" class="oculto">
+        <div class="sep"></div>
+        <div class="paso"><i>2</i>Elegí tu nombre</div>
+        <select id="repartidor"><option value="">Elegí tu nombre...</option></select>
+
+        <div class="sep"></div>
+        <div class="paso"><i>3</i>Tu PIN (4 dígitos)</div>
+        <input id="pin" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
+
+        <div class="botones">
+          <button class="accion btn-voy" onclick="marcar('VIENE')">CONFIRMO<br>QUE VOY</button>
+          <button class="accion btn-novoy" onclick="marcar('NO_VIENE')">HOY<br>NO VOY</button>
+        </div>
+      </div>
+
+      <div id="estado"></div>
+      <div class="reloj" id="reloj"></div>
+    </div>
+
+  </div>
+
+  <!-- CARTEL 1: qué hace con los paquetes pendientes -->
+  <div id="overlayPaquetes" class="overlay">
+    <div class="modal">
+      <div class="cab">
+        <div class="icono">📦</div>
+        <h2>¿Qué hacés con tus paquetes?</h2>
+      </div>
+      <div class="cuerpo">
+        <p>Elegí una opción para poder cerrar el aviso.</p>
+
+        <button class="opcion op-entrega" onclick="elegirDestino('ENTREGA')">
+          <span class="ico">📍</span>
+          <span><b>LOS ENTREGO EN EL DÍA</b>
+            <small>Quedan a tu nombre — no se desasignan</small></span>
+        </button>
+
+        <button class="opcion op-trae" onclick="elegirDestino('TRAE')">
+          <span class="ico">🏭</span>
+          <span><b>LOS TRAIGO AL DEPÓSITO</b>
+            <small>Los devolvés para que se reasignen</small></span>
+        </button>
+
+        <button class="opcion op-sin" onclick="elegirDestino('SIN')">
+          <span class="ico">✓</span>
+          <span><b>SIN PAQUETES PENDIENTES</b>
+            <small>No tenés paquetes sin entregar</small></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARTEL 2a: los trae al depósito -->
+  <div id="overlayTrae" class="overlay">
+    <div class="modal">
+      <div class="cab">
+        <div class="icono">📷</div>
+        <h2>Antes de irte</h2>
+      </div>
+      <div class="cuerpo">
+        <div class="anotado">Quedó anotado: <b>TRAE PAQUETES</b></div>
+
+        <div class="destacado">
+          ESCANEAR QR CON MÓDULO “PLANTA” AL PAQUETE UNA VEZ DEJADO EN EL DEPÓSITO
+        </div>
+
+        <div class="aviso-soporte">
+          <b>⚠️ Avisá a soporte si:</b><br>
+          • Los paquetes los trae <b>otro repartidor</b><br>
+          • Tenemos que <b>ir a buscarlos</b> nosotros
+        </div>
+
+        <button class="btn-cerrar" onclick="irASoporte('overlayTrae')">ENTENDIDO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARTEL 2b: los entrega en el día -->
+  <div id="overlayEntrega" class="overlay">
+    <div class="modal">
+      <div class="cab">
+        <div class="icono">📍</div>
+        <h2>Entregás tus pendientes</h2>
+      </div>
+      <div class="cuerpo">
+        <div class="anotado">Quedó anotado: <b>ENTREGA PENDIENTES, NO DESASIGNAR</b></div>
+        <p>Los paquetes siguen a tu nombre.</p>
+        <button class="btn-cerrar" onclick="irASoporte('overlayEntrega')">ENTENDIDO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARTEL 2c: no tiene paquetes pendientes -->
+  <div id="overlaySin" class="overlay">
+    <div class="modal">
+      <div class="cab">
+        <div class="icono">👌</div>
+        <h2>Listo</h2>
+      </div>
+      <div class="cuerpo">
+        <div class="anotado">Quedó anotado: <b>SIN PAQUETES PENDIENTES</b></div>
+        <p>Si después ves que te quedó alguno, avisá a soporte.</p>
+        <button class="btn-cerrar" onclick="irASoporte('overlaySin')">ENTENDIDO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARTEL 3: el motivo de la ausencia, lo escribe el repartidor -->
+  <div id="overlaySoporte" class="overlay">
+    <div class="modal">
+      <div class="cab">
+        <div class="icono">💬</div>
+        <h2>¿Por qué no venís hoy?</h2>
+      </div>
+      <div class="cuerpo">
+        <p>Contanos el motivo. Queda registrado junto con tu ausencia.</p>
+
+        <div class="motivos" id="motivos"></div>
+
+        <textarea id="motivo" maxlength="300"
+                  placeholder="Escribí el motivo..."
+                  oninput="revisarMotivo()"></textarea>
+
+        <button class="btn-enviar" id="btnEnviarMotivo"
+                onclick="enviarMotivo()" disabled>ENVIAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARTEL 4: confirmacion final -->
+  <div id="overlayGracias" class="overlay">
+    <div class="modal">
+      <div class="cab">
+        <div class="icono">✅</div>
+        <h2>Listo, gracias</h2>
+      </div>
+      <div class="cuerpo">
+        <p>Quedó todo registrado. Si el motivo se extiende más de un día,
+           avisale a soporte.</p>
+        <button class="btn-cerrar" onclick="cerrar('overlayGracias')">CERRAR</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var TODOS = [];
+    var zonaElegida = '';
+    var pendiente = null; // { nombre, pin } de quien avisó que no viene
+    var ausente = null;   // el mismo, guardado para el cartel del motivo
+
+    // Motivos frecuentes: tocar uno lo escribe en el campo de texto, que
+    // igual se puede editar a mano. Cambiá esta lista si querés otros.
+    var MOTIVOS_FRECUENTES = [
+      'Enfermedad',
+      'Turno médico',
+      'Problema con el vehículo',
+      'Tema familiar',
+      'Trámite personal',
+      'Tengo otro trabajo hoy'
+    ];
+
+    window.addEventListener('load', function () {
+      armarMotivos();
+      cargarRepartidores();
+      actualizarReloj();
+      setInterval(actualizarReloj, 1000);
+    });
+
+    function actualizarReloj() {
+      var d = new Date();
+      var hh = ('0' + d.getHours()).slice(-2);
+      var mm = ('0' + d.getMinutes()).slice(-2);
+      document.getElementById('reloj').textContent = 'Hora actual: ' + hh + ':' + mm;
+    }
+
+    function cargarRepartidores() {
+      google.script.run
+        .withSuccessHandler(function (lista) { TODOS = lista || []; armarZonas(); })
+        .withFailureHandler(function (err) {
+          mostrarEstado('No se pudo cargar la lista: ' + err.message, 'error');
+        })
+        .getRepartidores();
+    }
+
+    function armarZonas() {
+      var orden = ['Norte', 'Sur', 'Oeste', 'CABA'];
+      var presentes = {};
+      TODOS.forEach(function (r) { if (r.zona) presentes[r.zona] = true; });
+      var zonas = orden.filter(function (z) { return presentes[z]; });
+      Object.keys(presentes).forEach(function (z) { if (zonas.indexOf(z) === -1) zonas.push(z); });
+
+      var cont = document.getElementById('zonas');
+      cont.innerHTML = '';
+      zonas.forEach(function (z) {
+        var b = document.createElement('div');
+        b.className = 'zona';
+        b.textContent = z;
+        b.onclick = function () { elegirZona(z, b); };
+        cont.appendChild(b);
+      });
+    }
+
+    function elegirZona(zona, boton) {
+      zonaElegida = zona;
+      document.querySelectorAll('.zona').forEach(function (b) { b.classList.remove('activa'); });
+      boton.classList.add('activa');
+
+      var select = document.getElementById('repartidor');
+      select.innerHTML = '<option value="">Elegí tu nombre...</option>';
+      TODOS.filter(function (r) { return r.zona === zona; })
+        .sort(function (a, b) { return a.nombre.localeCompare(b.nombre); })
+        .forEach(function (r) {
+          var opt = document.createElement('option');
+          opt.value = r.nombre; opt.textContent = r.nombre;
+          select.appendChild(opt);
+        });
+
+      document.getElementById('bloqueNombre').classList.remove('oculto');
+      document.getElementById('pin').value = '';
+      mostrarEstado('', '');
+    }
+
+    // accion = 'VIENE' o 'NO_VIENE'
+    function marcar(accion) {
+      var nombre = document.getElementById('repartidor').value;
+      var pin = document.getElementById('pin').value;
+
+      if (!nombre) { mostrarEstado('Elegí tu nombre.', 'error'); return; }
+      if (!/^\d{4}$/.test(pin)) { mostrarEstado('El PIN debe tener 4 dígitos.', 'error'); return; }
+
+      bloquear(true);
+      mostrarEstado('Enviando...', 'info');
+
+      google.script.run
+        .withSuccessHandler(function (res) {
+          mostrarEstado(res.mensaje, res.ok ? 'ok' : 'error');
+
+          if (res.ok && res.noViene) {
+            // Guardamos quién es, para el segundo paso (destino de paquetes).
+            pendiente = { nombre: nombre, pin: pin };
+            abrir('overlayPaquetes');
+          } else if (res.ok) {
+            limpiarFormulario();
+          }
+          bloquear(false);
+        })
+        .withFailureHandler(function (err) {
+          mostrarEstado('Error: ' + err.message, 'error');
+          bloquear(false);
+        })
+        .confirmarAsistencia({ nombre: nombre, pin: pin, accion: accion });
+    }
+
+    // destino = 'ENTREGA', 'TRAE' o 'SIN'
+    function elegirDestino(destino) {
+      if (!pendiente) { cerrar('overlayPaquetes'); return; }
+
+      // Evitamos doble toque mientras viaja al servidor.
+      document.querySelectorAll('.opcion').forEach(function (b) { b.disabled = true; });
+
+      google.script.run
+        .withSuccessHandler(function (res) {
+          document.querySelectorAll('.opcion').forEach(function (b) { b.disabled = false; });
+          cerrar('overlayPaquetes');
+
+          if (!res.ok) { mostrarEstado(res.mensaje, 'error'); return; }
+
+          mostrarEstado(res.mensaje, 'ok');
+          if (res.trae) {
+            abrir('overlayTrae');
+          } else if (res.sinPaquetes) {
+            abrir('overlaySin');
+          } else {
+            abrir('overlayEntrega');
+          }
+          ausente = pendiente;   // lo necesitamos para el cartel del motivo
+          pendiente = null;
+          limpiarFormulario();
+        })
+        .withFailureHandler(function (err) {
+          document.querySelectorAll('.opcion').forEach(function (b) { b.disabled = false; });
+          mostrarEstado('Error: ' + err.message, 'error');
+        })
+        .registrarDestinoPaquetes({
+          nombre: pendiente.nombre, pin: pendiente.pin, destino: destino
+        });
+    }
+
+    // Cierra el cartel de los paquetes y encadena el del motivo. Sale
+    // siempre, elija lo que elija con los paquetes.
+    function irASoporte(id) {
+      cerrar(id);
+      document.getElementById('motivo').value = '';
+      document.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('activo'); });
+      revisarMotivo();
+      abrir('overlaySoporte');
+    }
+
+    function armarMotivos() {
+      var cont = document.getElementById('motivos');
+      MOTIVOS_FRECUENTES.forEach(function (m) {
+        var c = document.createElement('button');
+        c.className = 'chip';
+        c.textContent = m;
+        c.onclick = function () { elegirMotivo(m, c); };
+        cont.appendChild(c);
+      });
+    }
+
+    function elegirMotivo(texto, chip) {
+      document.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('activo'); });
+      chip.classList.add('activo');
+      document.getElementById('motivo').value = texto;
+      revisarMotivo();
+    }
+
+    /** El boton ENVIAR se habilita solo si hay algo escrito. */
+    function revisarMotivo() {
+      var hay = document.getElementById('motivo').value.trim() !== '';
+      document.getElementById('btnEnviarMotivo').disabled = !hay;
+    }
+
+    function enviarMotivo() {
+      var texto = document.getElementById('motivo').value.trim();
+      if (texto === '') { return; }
+      if (!ausente) { cerrar('overlaySoporte'); return; }
+
+      var boton = document.getElementById('btnEnviarMotivo');
+      boton.disabled = true;
+      boton.textContent = 'ENVIANDO...';
+
+      google.script.run
+        .withSuccessHandler(function (res) {
+          boton.textContent = 'ENVIAR';
+          if (!res.ok) {
+            boton.disabled = false;
+            mostrarEstado(res.mensaje, 'error');
+            return;
+          }
+          cerrar('overlaySoporte');
+          abrir('overlayGracias');
+          mostrarEstado(res.mensaje, 'ok');
+          ausente = null;
+        })
+        .withFailureHandler(function (err) {
+          boton.textContent = 'ENVIAR';
+          boton.disabled = false;
+          mostrarEstado('Error: ' + err.message, 'error');
+        })
+        .registrarMotivoAusencia({
+          nombre: ausente.nombre, pin: ausente.pin, motivo: texto
+        });
+    }
+
+    function abrir(id) { document.getElementById(id).classList.add('visible'); }
+    function cerrar(id) { document.getElementById(id).classList.remove('visible'); }
+
+    function limpiarFormulario() {
+      document.getElementById('pin').value = '';
+      document.getElementById('repartidor').value = '';
+    }
+
+    function mostrarEstado(texto, clase) {
+      var caja = document.getElementById('estado');
+      caja.textContent = texto;
+      caja.className = clase;
+    }
+
+    function bloquear(b) {
+      document.querySelectorAll('button.accion').forEach(function (x) { x.disabled = b; });
+    }
+  </script>
+</body>
+</html>
