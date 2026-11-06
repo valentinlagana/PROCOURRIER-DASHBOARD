@@ -231,3 +231,17 @@ assets/app.js         Mapa, tarifas y cotización
 data/amba.geojson     Zonas de CABA y GBA
 scripts/build_geo.py  Genera el geojson desde las fuentes oficiales
 ```
+
+## Montar el cotizador en procourrier.com.ar
+
+`python3 scripts/build_html.py` deja dos salidas:
+
+- `dist/cotizador-procourrier.html` — un solo archivo, con el mapa y jsPDF
+  adentro. Para mandar por mail o abrir con doble click, sin servidor.
+- `dist/web/` — la versión para el sitio: `index.html`, `amba.js` y
+  `basemap.jpg` por separado, que el navegador cachea entre visitas, y jsPDF
+  desde cdnjs. Pesa 829 KB en total contra 1,3 MB del archivo único.
+
+Para publicarlo en la web nueva (repo `PROCOURRIER-NUEVA-WEB`, estático en
+Vercel): copiar `dist/web/` a `cotizador/` y enlazarlo desde el nav y el
+hero. Queda servido en `/cotizador/`; `vercel.json` no necesita cambios.

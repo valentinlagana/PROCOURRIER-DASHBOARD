@@ -44,3 +44,35 @@ html = cabeza + html[:i] + '\n</head>\n<body>' + html[i:] + '\n</body>\n</html>\
 os.makedirs(os.path.dirname(SALIDA), exist_ok=True)
 open(SALIDA, 'w', encoding='utf-8').write(html)
 print(f'{SALIDA}: {os.path.getsize(SALIDA)/1024:.0f} KB')
+
+# ── Versión para montar en el sitio ──────────────────────────────────────
+# El archivo único sirve para mandar por mail o abrir con doble click. Dentro
+# de una web conviene lo contrario: las zonas, el mapa y jsPDF como archivos
+# aparte, que el navegador cachea y no vuelve a bajar en cada visita.
+import shutil
+
+WEB = os.path.join(RAIZ, 'dist', 'web')
+os.makedirs(WEB, exist_ok=True)
+
+suelto = open(os.path.join(RAIZ, 'preview', 'index.html'), encoding='utf-8').read()
+i = suelto.index('</style>') + len('</style>')
+cabeza_web = ("""<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cotizador de envíos · ProCourrier</title>
+<meta name="description" content="Calculá tus tarifas de envío en CABA y el AMBA: elegí tu depósito, tu volumen y te mandamos la propuesta en PDF.">
+<link rel="canonical" href="https://procourrier.com.ar/cotizador/">
+<meta property="og:title" content="Cotizador de envíos · ProCourrier">
+<meta property="og:description" content="Tus tarifas de última milla en CABA y AMBA, al instante.">
+<meta property="og:type" content="website">
+<style>*{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}"""
+"""img{max-width:100%}[hidden]{display:none!important}</style>
+""")
+web = cabeza_web + suelto[:i] + '\n</head>\n<body>' + suelto[i:] + '\n</body>\n</html>\n'
+open(os.path.join(WEB, 'index.html'), 'w', encoding='utf-8').write(web)
+for f in ('amba.js', 'basemap.jpg'):
+    shutil.copy(os.path.join(RAIZ, 'preview', f), os.path.join(WEB, f))
+total = sum(os.path.getsize(os.path.join(WEB, f)) for f in os.listdir(WEB))
+print(f'{WEB}/: {len(os.listdir(WEB))} archivos, {total/1024:.0f} KB')
