@@ -1819,6 +1819,26 @@ function nombrePDF() {
   return 'Propuesta ProCourrier - ' + quien.replace(/[^\wáéíóúñÁÉÍÓÚÑ .-]/g, '') + '.pdf';
 }
 
+/** Guarda el PDF.
+
+    El archivo suelto lo baja con un enlace, como cualquier página. Dentro
+    del visor de artifacts de Claude eso no funciona: ahí la descarga la
+    tiene que pedir la propia plataforma, que le muestra al visitante una
+    confirmación. Se usa la que esté disponible. */
+async function guardarPDF(blob, nombre) {
+  try {
+    const puerta = window.claude && claude.use ? await claude.use('downloads') : null;
+    if (puerta) {
+      await puerta.save({ filename: nombre, data: blob });
+      return true;
+    }
+  } catch (e) {
+    if (e && e.code === 'declined') return false;   // dijo que no: no se insiste
+  }
+  descargar(blob, nombre);
+  return true;
+}
+
 function descargar(blob, nombre) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1843,7 +1863,7 @@ $('enviar-wa').addEventListener('click', async () => {
 
   const blob = armarPDF().output('blob');
   const nombre = nombrePDF();
-  descargar(blob, nombre);
+  await guardarPDF(blob, nombre);
 
   const archivo = new File([blob], nombre, { type: 'application/pdf' });
   if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
