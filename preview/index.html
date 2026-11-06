@@ -643,11 +643,12 @@ a.btn { text-decoration: none; }
             </select>
           </label>
 
-          <label class="campo-f" for="dia">
-            <span>Envíos por día</span>
-            <select id="dia">
-              <option value="si">10 o más</option>
-              <option value="no">Menos de 10</option>
+          <label class="campo-f" for="colecta">
+            <span>Colecta</span>
+            <select id="colecta">
+              <option value="bonificada">Sí · 10 envíos por día o más</option>
+              <option value="paga">Sí · menos de 10 por día</option>
+              <option value="no">No, los llevo yo al depósito</option>
             </select>
           </label>
 
@@ -676,10 +677,10 @@ a.btn { text-decoration: none; }
           </label>
 
           <label class="campo-f ancho" for="f-fulfillment">
-            <span>Fulfillment · se cotiza aparte</span>
+            <span>Fulfillment · a consultar</span>
             <select id="f-fulfillment">
               <option value="no">No por ahora</option>
-              <option value="si">Sí, quiero que lo coticen</option>
+              <option value="si">Sí, quiero consultarlo</option>
             </select>
           </label>
         </div>
@@ -926,12 +927,19 @@ const ESCALONES = ['Hasta 200 envíos', 'De 201 a 300 envíos', 'Más de 300 env
 // en las dos modalidades.
 const COLECTA = { neto: 6000, desde: 10 };
 
+// Las tres situaciones posibles del retiro, con lo que se cobra en cada una.
+const COLECTAS = {
+  bonificada: { detalle: 'desde ' + 10 + ' envíos por día', precio: 'Bonificada', nota: 'sin cargo' },
+  paga: { detalle: 'menos de ' + 10 + ' envíos por día', precio: null, nota: '+ IVA · por día' },
+  no: { detalle: 'llevás los paquetes al depósito', precio: 'Sin cargo', nota: 'no la usás' },
+};
+
 const estado = {
   origen: zonas.find(z => z.nombre === 'Villa Crespo'),
   destino: zonas.find(z => z.nombre === 'Quilmes'),
   radios: [9.5, 21.5, 43.5],   // hasta dónde llega cada una de las tres primeras
   tramo: 0,                    // escalón de volumen elegido en la planilla
-  colecta: true,               // 10 o más envíos por día: el retiro no se cobra
+  colecta: 'bonificada',       // 'bonificada' | 'paga' | 'no la usa'
   modalidad: 'a',
   modo: 'ambas',
   modoElegido: 'ambas',   // lo último que eligió en la barra del mapa
@@ -1352,16 +1360,15 @@ function pintarTarifas() {
   }).join('') + filaColecta();
 }
 
-/* La colecta es parte del precio: si no llega a 10 envíos por día se cobra. */
+/* La colecta es parte del precio: el retiro se cobra sólo si lo usa y no
+   llega a los 10 envíos por día. */
 function filaColecta() {
-  const paga = !estado.colecta;
+  const c = COLECTAS[estado.colecta];
   return '<div class="tar tar--extra">' +
     '<span class="tar__c tar__c--n"></span>' +
-    '<div class="tar__n"><b>Colecta</b>' +
-    '<em>' + (paga ? 'menos de ' + COLECTA.desde + ' envíos por día'
-                   : 'desde ' + COLECTA.desde + ' envíos por día') + '</em></div>' +
-    '<div class="tar__p"><b>' + (paga ? pesos.format(COLECTA.neto) : 'Bonificada') + '</b>' +
-    '<em>' + (paga ? '+ IVA · por día' : 'sin cargo') + '</em></div>' +
+    '<div class="tar__n"><b>Colecta</b><em>' + c.detalle + '</em></div>' +
+    '<div class="tar__p"><b>' + (c.precio || pesos.format(COLECTA.neto)) + '</b>' +
+    '<em>' + c.nota + '</em></div>' +
     '</div>';
 }
 
@@ -1581,8 +1588,8 @@ $('tramo').addEventListener('change', ev => {
   repintar();
 });
 
-$('dia').addEventListener('change', ev => {
-  estado.colecta = ev.target.value === 'si';
+$('colecta').addEventListener('change', ev => {
+  estado.colecta = ev.target.value;
   repintar();
 });
 
@@ -1614,10 +1621,12 @@ function resumenAlta() {
     'Plataforma: ' + $('f-plataforma').value,
     'Volumen: ' + ESCALONES[escalonIdx()].toLowerCase() + ' por semana',
     'Facturación: ' + t.nombre,
-    'Colecta: ' + (estado.colecta
-      ? 'bonificada (' + COLECTA.desde + ' o más envíos por día)'
-      : pesos.format(COLECTA.neto) + ' + IVA por día (menos de ' + COLECTA.desde + ' por día)'),
-    'Fulfillment: ' + ($('f-fulfillment').value === 'si' ? 'sí, quiero la propuesta' : 'no por ahora'),
+    'Colecta: ' + { bonificada: 'sí, bonificada (' + COLECTA.desde + ' o más envíos por día)',
+                    paga: 'sí, ' + pesos.format(COLECTA.neto) + ' + IVA por día (menos de '
+                          + COLECTA.desde + ' por día)',
+                    no: 'no, lleva los paquetes al depósito' }[estado.colecta],
+    'Fulfillment: ' + ($('f-fulfillment').value === 'si'
+      ? 'quiere consultarlo' : 'no por ahora'),
     '',
     'Tarifas que me muestra el cotizador:',
     ...[0, 1, 2, 3].map(i => '  T' + (i + 1) + ' ' + NOMBRES[i] + ': ' + pesos.format(precio(i)) +
@@ -1651,6 +1660,7 @@ const CONDICIONES = [
   'Sin recargos. Ni por clima ni por días de alta demanda: la tarifa es la tarifa.',
   'Horario de corte propio. Cuanto más cerca estés, más tarde podés despachar.',
   'Zonas de Mercado Envíos Flex. Se toman tal cual figuran en tu liquidación.',
+  'Fulfillment opcional. En nuestro depósito de Villa Madero, a consultar: no tiene precio de lista.',
 ];
 
 const hoy = () => new Date().toLocaleDateString('es-AR',
@@ -1772,19 +1782,24 @@ function armarPDF() {
   });
 
   /* ─── La colecta, aparte de la tabla porque no es una tarifa ─── */
+  const TEXTO_COLECTA = {
+    bonificada: ['Pasamos por tu depósito sin cargo: despachás ' + COLECTA.desde
+                 + ' envíos por día o más.', 'Bonificada', [31, 122, 61], [243, 249, 244]],
+    paga: ['Por debajo de ' + COLECTA.desde + ' envíos por día el retiro tiene un costo fijo.',
+           pesos.format(COLECTA.neto) + ' + IVA por día', NEGRO, [253, 243, 234]],
+    no: ['Elegiste acercar los paquetes a nuestro depósito, así que no hay retiro que cobrar.',
+         'Sin cargo', [31, 122, 61], [243, 249, 244]],
+  };
+  const [textoCol, precioCol, colorCol, fondoCol] = TEXTO_COLECTA[estado.colecta];
   y += 1;
-  relleno(estado.colecta ? [243, 249, 244] : [253, 243, 234]);
+  relleno(fondoCol);
   doc.rect(M, y - 4, ANCHO, 14, 'F');
   fuente('bold', 9.5, NEGRO);
   doc.text('Colecta', M + 5, y + 1);
   fuente('normal', 8, SUAVE);
-  doc.text(estado.colecta
-    ? 'Pasamos por tu depósito sin cargo: despachás ' + COLECTA.desde + ' envíos por día o más.'
-    : 'Por debajo de ' + COLECTA.desde + ' envíos por día el retiro tiene un costo fijo.',
-    M + 5, y + 5.6);
-  fuente('bold', 11, estado.colecta ? [31, 122, 61] : NEGRO);
-  doc.text(estado.colecta ? 'Bonificada' : pesos.format(COLECTA.neto) + ' + IVA por día',
-           W - M - 5, y + 2.5, { align: 'right' });
+  doc.text(textoCol, M + 5, y + 5.6);
+  fuente('bold', 11, colorCol);
+  doc.text(precioCol, W - M - 5, y + 2.5, { align: 'right' });
   y += 20;
 
   fuente('normal', 7.8, SUAVE);
@@ -1793,18 +1808,24 @@ function armarPDF() {
   doc.text(pie, M, y);
   y += pie.length * 3.6 + 7;
 
-  /* ─── Fulfillment, si lo pidió: opcional y aparte ─── */
+  /* ─── Fulfillment: no tiene precio de lista, se consulta ─── */
   if ($('f-fulfillment').value === 'si') {
     relleno(NEGRO);
-    doc.rect(M, y - 4, ANCHO, 17, 'F');
+    doc.rect(M, y - 4, ANCHO, 21, 'F');
     relleno(NARANJA);
-    doc.rect(M, y - 4, 1.6, 17, 'F');
+    doc.rect(M, y - 4, 1.6, 21, 'F');
     fuente('bold', 9.5, [255, 255, 255]);
     doc.text('Fulfillment en nuestro depósito de Villa Madero', M + 6, y + 1);
+    relleno(NARANJA);
+    doc.roundedRect(W - M - 32, y - 3.2, 27, 6.5, 3.2, 3.2, 'F');
+    fuente('bold', 7, [255, 255, 255]);
+    doc.text('A CONSULTAR', W - M - 18.5, y + 1.1, { align: 'center' });
     fuente('normal', 8, [168, 164, 160]);
-    doc.text('Almacenamiento, pick & pack, control de stock y devoluciones. Se cotiza aparte: '
-      + 'el precio sale del volumen y del espacio que uses.', M + 6, y + 6, { maxWidth: ANCHO - 12 });
-    y += 23;
+    doc.text('Almacenamiento por metro cúbico, pick & pack, materiales de embalaje, control de '
+      + 'stock, devoluciones y seguro durante la estadía. No tiene precio de lista: lo armamos '
+      + 'con vos según el volumen y el espacio que necesites.', M + 6, y + 6.5,
+      { maxWidth: ANCHO - 12 });
+    y += 27;
   }
 
   /* ─── Credenciales, al pie de la primera hoja ─── */
@@ -1868,7 +1889,9 @@ function armarPDF() {
   y += 10;
 
   const PASOS = [
-    ['Colecta', 'Pasamos por tu depósito en la ventana acordada y escaneamos cada paquete al retirarlo.'],
+    estado.colecta === 'no'
+      ? ['Recepción', 'Acercás los paquetes a nuestro centro de operaciones y los escaneamos al recibirlos.']
+      : ['Colecta', 'Pasamos por tu depósito en la ventana acordada y escaneamos cada paquete al retirarlo.'],
     ['Clasificación', 'Los paquetes se ordenan por zona en nuestro centro de operaciones.'],
     ['Distribución', 'Salen a la calle el mismo día, con recorridos armados por proximidad.'],
     ['Entrega', 'Todo entregado antes de las 21 hs, con aviso al comprador y confirmación.'],
