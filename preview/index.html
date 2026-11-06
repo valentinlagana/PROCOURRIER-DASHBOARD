@@ -255,12 +255,18 @@ button, input { font: inherit; color: inherit; }
 }
 
 .tar:last-child { border-bottom: 0; }
-.tar__c { width: 11px; height: 11px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+/* El aro aclara el borde: sin el, la muestra negra de la T4 no se ve
+   sobre el panel oscuro. */
+.tar__c { width: 11px; height: 11px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.3); }
 .tar__n b { display: block; font-size: 12.5px; font-weight: 500; }
 .tar__n em { font-family: var(--dato); font-size: 10px; font-style: normal; color: var(--ink-3); }
 .tar__p { text-align: right; }
 .tar__p b { display: block; font-family: var(--dato); font-size: 15px; font-weight: 600; letter-spacing: -.02em; }
 .tar__p em { font-family: var(--dato); font-size: 9.5px; font-style: normal; color: var(--ink-3); }
+
+/* La colecta no es una de las cuatro tarifas: se separa con una linea. */
+.tar--extra { border-top: 1px solid var(--line-2); border-bottom: 0; margin-top: 2px; }
+.tar__c--n { background: none; box-shadow: inset 0 0 0 1px var(--line-2); }
 
 .ajustes { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 
@@ -655,6 +661,14 @@ a.btn { text-decoration: none; }
             </select>
           </label>
 
+          <label class="campo-f" for="dia">
+            <span>Envíos por día</span>
+            <select id="dia">
+              <option value="si">10 o más</option>
+              <option value="no">Menos de 10</option>
+            </select>
+          </label>
+
           <label class="campo-f" for="modalidad">
             <span>Facturación</span>
             <select id="modalidad">
@@ -817,6 +831,7 @@ a.btn { text-decoration: none; }
           <li><b>99% de SLA</b> medido por las plataformas de Mercado Libre.</li>
           <li><b>Todo entregado antes de las 21 hs</b>, el mismo día que retiramos.</li>
           <li><b>Soporte de 9 a 22</b>, directo, sin call center.</li>
+          <li><b>Horario de corte según tu ubicación</b>: cuanto más cerca estés del centro de operaciones, más tarde podés despachar.</li>
           <li><b>Liquidación semanal</b> envío por envío, con la zona aplicada.</li>
           <li><b>Sin recargos</b> por clima ni por días de alta demanda.</li>
           <li><b>Fulfillment opcional</b> en el depósito de Villa Madero.</li>
@@ -929,11 +944,17 @@ const TARIFARIO = {
 
 const ESCALONES = ['Hasta 200 envíos', 'De 201 a 300 envíos', 'Más de 300 envíos'];
 
+// Tarifario 01-09-2026: desde 10 envíos diarios el retiro no se cobra; por
+// debajo tiene un costo fijo por día, que el tarifario publica con IVA aparte
+// en las dos modalidades.
+const COLECTA = { neto: 6000, desde: 10 };
+
 const estado = {
   origen: zonas.find(z => z.nombre === 'Villa Crespo'),
   destino: zonas.find(z => z.nombre === 'Quilmes'),
   radios: [9.5, 21.5, 43.5],   // hasta dónde llega cada una de las tres primeras
   tramo: 0,                    // escalón de volumen elegido en la planilla
+  colecta: true,               // 10 o más envíos por día: el retiro no se cobra
   modalidad: 'a',
   modo: 'ambas',
 };
@@ -1332,7 +1353,20 @@ function pintarTarifas() {
       '<div class="tar__p"><b>' + pesos.format(precio(i)) + '</b>' +
       '<em>' + (neta ? '+ IVA · ' + pesos.format(precioFinal(i)) + ' final' : 'valor final') + '</em></div>' +
       '</div>';
-  }).join('');
+  }).join('') + filaColecta();
+}
+
+/* La colecta es parte del precio: si no llega a 10 envíos por día se cobra. */
+function filaColecta() {
+  const paga = !estado.colecta;
+  return '<div class="tar tar--extra">' +
+    '<span class="tar__c tar__c--n"></span>' +
+    '<div class="tar__n"><b>Colecta</b>' +
+    '<em>' + (paga ? 'menos de ' + COLECTA.desde + ' envíos por día'
+                   : 'desde ' + COLECTA.desde + ' envíos por día') + '</em></div>' +
+    '<div class="tar__p"><b>' + (paga ? pesos.format(COLECTA.neto) : 'Bonificada') + '</b>' +
+    '<em>' + (paga ? '+ IVA · por día' : 'sin cargo') + '</em></div>' +
+    '</div>';
 }
 
 function pintarRadios() {
@@ -1546,6 +1580,11 @@ $('tramo').addEventListener('change', ev => {
   repintar();
 });
 
+$('dia').addEventListener('change', ev => {
+  estado.colecta = ev.target.value === 'si';
+  repintar();
+});
+
 $('modalidad').addEventListener('change', ev => {
   estado.modalidad = ev.target.value;
   repintar();
@@ -1574,6 +1613,9 @@ function resumenAlta() {
     'Plataforma: ' + $('f-plataforma').value,
     'Volumen: ' + ESCALONES[escalonIdx()].toLowerCase() + ' por semana',
     'Facturación: ' + t.nombre,
+    'Colecta: ' + (estado.colecta
+      ? 'bonificada (' + COLECTA.desde + ' o más envíos por día)'
+      : pesos.format(COLECTA.neto) + ' + IVA por día (menos de ' + COLECTA.desde + ' por día)'),
     'Fulfillment: ' + ($('f-fulfillment').value === 'si' ? 'sí, quiero la propuesta' : 'no por ahora'),
     '',
     'Tarifas que me muestra el cotizador:',
