@@ -74,6 +74,23 @@ ZONAS = [
     ('La Plata Oeste',      'La Plata',             ['Melchor Romero','Lisandro Olmos','Abasto','Colonia Urquiza','Ángel Etcheverry','El Peligro','Malvinas Argentinas']),
 ]
 
+# Banda de Mercado Envíos Flex a la que pertenece cada zona, leída del mapa
+# oficial de cobertura: CABA (amarillo), AMBA 1 (verde), AMBA 2 (azul) y
+# AMBA 3 (rosa). Es la clasificación que aparece en la liquidación, así que
+# es la que manda sobre cualquier estimación por distancia.
+BANDAS = {
+    1: ['Vicente López', 'San Isidro', 'San Martín', 'Tres de Febrero', 'Hurlingham',
+        'Ituzaingó', 'Morón', 'La Matanza Norte', 'Lanús', 'Avellaneda', 'Lomas de Zamora'],
+    2: ['Nordelta', 'Tigre', 'San Fernando', 'Malvinas Argentinas', 'José C Paz',
+        'San Miguel', 'Moreno', 'Merlo', 'La Matanza Sur', 'Ezeiza', 'Esteban Echeverría',
+        'Almirante Brown', 'Quilmes', 'Florencio Varela', 'Berazategui'],
+    3: ['Zárate', 'Campana', 'Escobar', 'Ingeniero Maschwitz', 'Garín', 'Villa Rosa',
+        'Pilar', 'Del Viso', 'Derqui', 'Luján', 'General Rodríguez', 'Marcos Paz',
+        'Cañuelas', 'San Vicente', 'Guernica', 'Ensenada', 'Berisso',
+        'La Plata Norte', 'La Plata Centro', 'La Plata Oeste'],
+}
+BANDA = {n: b for b, zs in BANDAS.items() for n in zs}
+
 # Zonas que se dibujan para dar contexto pero no tienen servicio.
 SIN_SERVICIO = [
     ('Delta del Paraná', ['Primera Sección','Segunda Sección','Tercera Sección']),
@@ -256,7 +273,8 @@ def main():
         r = punto(nombre, g)
         feats.append({'type': 'Feature', 'geometry': redondear(mapping(g)),
                       'properties': {'nombre': nombre, 'region': 'GBA', 'cordon': cordon,
-                                     'enRed': en_red, 'lat': round(r.y, 5), 'lon': round(r.x, 5)}})
+                                     'enRed': en_red, 'banda': BANDA.get(nombre),
+                                     'lat': round(r.y, 5), 'lon': round(r.x, 5)}})
 
     for nombre, partido, cuales in ZONAS:
         locs = porPartido.get(partido, {})
@@ -281,7 +299,12 @@ def main():
     sueltas = [(p, n) for p, locs in porPartido.items() for n in locs if (p, n) not in usadas]
     if sueltas: print(f'  sin asignar ({len(sueltas)}): {sueltas[:10]}')
 
+    for f in caba: f['properties']['banda'] = 0
     feats += caba
+
+    sin_banda = [f['properties']['nombre'] for f in feats
+                 if f['properties']['enRed'] and f['properties'].get('banda') is None]
+    if sin_banda: print(f'  OJO sin banda de Flex: {sin_banda}')
     ruta = os.path.join(DATA, 'amba.geojson')
     json.dump({'type': 'FeatureCollection', 'features': feats},
               open(ruta, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))

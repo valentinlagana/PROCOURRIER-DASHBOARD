@@ -754,10 +754,11 @@ a.btn { text-decoration: none; }
 
         <div id="tarifas"></div>
 
+        <p class="nota" id="nota-modelo"></p>
         <p class="nota" id="nota-fact"></p>
         <p class="nota" id="nota-escalon"></p>
 
-        <details class="ajustes">
+        <details class="ajustes" id="ajustes">
           <summary>Ajustar los radios de zona</summary>
           <p class="nota">
             Las zonas las define Mercado Envíos Flex, no ProCourrier. Estos radios
@@ -898,6 +899,7 @@ const zonas = window.AMBA.features.map((f, i) => ({
   nombre: f.properties.nombre,
   region: f.properties.region,
   enRed: f.properties.enRed,
+  banda: f.properties.banda,
   detalle: f.properties.region === 'CABA'
     ? 'CABA · Comuna ' + f.properties.comuna
     : 'Gran Buenos Aires',
@@ -918,6 +920,11 @@ const CABA_CENTRO = {
 };
 
 const NOMBRES = ['Zona domicilio', 'Zona cercana', 'Zona lejana', 'Zona muy lejana'];
+
+// Las cuatro bandas del mapa oficial de Mercado Envíos Flex. Son las que
+// figuran en la liquidación, así que para un depósito en CABA no hay nada que
+// estimar: la banda es la tarifa.
+const BANDAS = ['CABA', 'AMBA 1', 'AMBA 2', 'AMBA 3'];
 
 // Tarifario vigente desde el 01-09-2026. Factura A publica valores netos
 // (el IVA se discrimina); sin factura, el valor ya es el final.
@@ -957,6 +964,7 @@ const estado = {
   colecta: true,               // 10 o más envíos por día: el retiro no se cobra
   modalidad: 'a',
   modo: 'ambas',
+  modoElegido: 'ambas',   // lo último que eligió en la barra del mapa
 };
 
 const escalonIdx = () => estado.tramo;
@@ -993,13 +1001,17 @@ function tarifaDe(km) {
   return 3;
 }
 
-/** Dos reglas mandan sobre la distancia: la zona del propio depósito es T1,
-    y para un depósito en CABA toda la Capital es T1. */
+/** Con el depósito en CABA, el mapa de Flex ya dice la tarifa de cada zona:
+    CABA es la 1, AMBA 1 la 2, AMBA 2 la 3 y AMBA 3 la 4. Ese mapa está
+    dibujado desde la Capital, así que desde cualquier otro depósito Flex
+    recalcula las bandas y lo único que queda es estimarlas por distancia. */
+const usaBandas = () => estado.origen.region === 'CABA';
+
 function tarifaDeZona(z) {
   if (!z.enRed) return FUERA_DE_RED;
   const o = estado.origen;
+  if (usaBandas()) return z.banda;
   if (o.nombre === z.nombre) return 0;
-  if (o.region === 'CABA' && z.region === 'CABA') return 0;
   return tarifaDe(kmHasta(z));
 }
 
@@ -1243,7 +1255,7 @@ function pintarZonas() {
 
 function pintarAnillos() {
   gAnillos.textContent = '';
-  if (!radiosOk()) return;
+  if (usaBandas() || !radiosOk()) return;
   const ver = estado.modo !== 'zonas';
   const relleno = estado.modo === 'anillos';
 
@@ -1273,7 +1285,7 @@ function pintarHud() {
   gHud.textContent = '';
   const aPantalla = (lon, lat) => { const [x, y] = px(lon, lat); return [x * k + tx, y * k + ty]; };
 
-  if (estado.modo !== 'zonas' && radiosOk()) {
+  if (!usaBandas() && estado.modo !== 'zonas' && radiosOk()) {
     [0, 1, 2, 3].forEach(i => {
       const desde = i === 0 ? 0 : estado.radios[i - 1];
       // La T4 no tiene anillo: se rotula apenas afuera del último.
@@ -1312,7 +1324,8 @@ const globo = $('globo');
 function mostrarGlobo(z, ev) {
   const t = tarifaDeZona(z);
   const km = un.format(kmHasta(z));
-  globo.innerHTML = '<strong>' + z.nombre + '</strong><em>' + z.detalle + '</em><br>' +
+  const banda = z.enRed && z.banda != null ? z.detalle + ' · ' + BANDAS[z.banda] : z.detalle;
+  globo.innerHTML = '<strong>' + z.nombre + '</strong><em>' + banda + '</em><br>' +
     '<b style="color:' + (t === FUERA_DE_RED ? '#93a4bf' : COLORES[t]) + '">' +
     (t === FUERA_DE_RED ? 'Fuera de la red'
        : 'Tarifa ' + (t + 1) + ' · ' + pesos.format(precio(t))) +
@@ -1336,16 +1349,29 @@ function pintarEscalon() {
   const ahorro = t.escalones[0].netos[0] - precio(0);
   $('sub-tarifas').textContent = t.nombre + ' · ' + ESCALONES[escalonIdx()].toLowerCase() + ' por semana.';
   $('nota-fact').textContent = t.pie;
+  $('nota-modelo').textContent = usaBandas()
+    ? 'Con el depósito en CABA las zonas salen del mapa oficial de Mercado '
+      + 'Envíos Flex: CABA, AMBA 1, AMBA 2 y AMBA 3. Es la misma clasificación '
+      + 'que figura en tu liquidación.'
+    : 'Desde un depósito fuera de la Capital, Flex recalcula las bandas tomando '
+      + 'tu ubicación como centro. Estos radios son una estimación calibrada '
+      + 'con 62.933 envíos facturados.';
   $('nota-escalon').textContent = ahorro > 0
     ? 'Con este volumen ahorrás ' + pesos.format(ahorro) + ' por envío contra el primer escalón.'
     : 'Desde 201 envíos por semana el valor baja solo, sin pedir nada.';
 }
 
+/** Qué cubre cada tarifa: la banda oficial, o el anillo de kilómetros. */
+function alcance(i) {
+  if (usaBandas()) return 'zona ' + BANDAS[i];
+  const desde = i === 0 ? 0 : estado.radios[i - 1];
+  return i === 3 ? 'resto de la red' : desde + '–' + estado.radios[i] + ' km';
+}
+
 function pintarTarifas() {
   const neta = TARIFARIO[estado.modalidad].neta;
   $('tarifas').innerHTML = [0, 1, 2, 3].map(i => {
-    const desde = i === 0 ? 0 : estado.radios[i - 1];
-    const rango = i === 3 ? 'resto de la red' : desde + '–' + estado.radios[i] + ' km';
+    const rango = alcance(i);
     return '<div class="tar">' +
       '<span class="tar__c" style="background:' + COLORES[i] + '"></span>' +
       '<div class="tar__n"><b>Tarifa ' + (i + 1) + '</b>' +
@@ -1401,11 +1427,12 @@ function pintarFranja() {
   const total = estado.radios[2] || 1;
   $('franja').innerHTML = [0, 1, 2, 3].map(i => {
     const desde = i === 0 ? 0 : estado.radios[i - 1];
-    const ultima = i === 3;
-    const ancho = ultima ? 34 : Math.max(11, ((estado.radios[i] - desde) / total) * 66);
+    const ancho = usaBandas() ? 25
+                : i === 3 ? 34 : Math.max(11, ((estado.radios[i] - desde) / total) * 66);
     return '<div class="franja__seg" style="background:' + COLORES[i] + ';color:' + TINTA[i] +
            ';flex:' + ancho + ' 1 0"><b>' + pesos.format(precio(i)) + '</b><span>' +
-           (ultima ? 'resto de la red' : desde + '–' + estado.radios[i] + ' km') + '</span></div>';
+           (usaBandas() ? BANDAS[i] : i === 3 ? 'resto de la red'
+                                              : desde + '–' + estado.radios[i] + ' km') + '</span></div>';
   }).join('');
 }
 
@@ -1418,7 +1445,8 @@ function pintarCotiz() {
 
   caja.classList.toggle('afuera', t === FUERA_DE_RED);
   $('km').textContent = un.format(km) + ' km';
-  $('donde').textContent = estado.destino.nombre + ' · ' + estado.destino.detalle;
+  $('donde').textContent = estado.destino.nombre + ' · ' + estado.destino.detalle +
+    (estado.destino.banda != null ? ' · ' + BANDAS[estado.destino.banda] : '');
 
   if (t === FUERA_DE_RED) {
     $('chapa').textContent = 'Sin cobertura';
@@ -1543,9 +1571,14 @@ conectarCombo('busca-destino', 'op-destino', z => {
 
 $('cuenta-red').textContent = enRed.length + ' zonas';
 
+function marcarModo() {
+  document.querySelectorAll('.barra-modo button')
+    .forEach(o => o.classList.toggle('activo', o.dataset.modo === estado.modo));
+}
+
 document.querySelectorAll('.barra-modo button').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('.barra-modo button').forEach(o => o.classList.toggle('activo', o === b));
-  estado.modo = b.dataset.modo;
+  estado.modo = estado.modoElegido = b.dataset.modo;
+  marcarModo();
   repintar();
 }));
 
@@ -1561,6 +1594,12 @@ function avisar(texto) {
 /* ════════════ Arranque ════════════ */
 
 function repintar() {
+  // Con el depósito en CABA el mapa no tiene anillos que mostrar.
+  document.querySelector('.barra-modo').hidden = usaBandas();
+  $('ajustes').hidden = usaBandas();
+  // En bandas sólo hay zonas; al salir se recupera la vista que había elegido.
+  estado.modo = usaBandas() ? 'zonas' : estado.modoElegido;
+  marcarModo();
   pintarZonas();
   pintarAnillos();
   pintarHud();
