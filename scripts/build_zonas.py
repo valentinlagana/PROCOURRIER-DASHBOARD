@@ -10,13 +10,13 @@ El Delta queda fuera: no se circula en vehículo. Zárate y Campana se recortan
 a tierra firme restando el Paraná y quedándose con la parte donde está la
 ciudad, para no prometer las islas.
 
-Cada zona con servicio se recorta además contra la planta urbana del IGN
-(data/urbano.geojson). Un partido como Zárate mide 1.168 km² y la ciudad es
-una fracción de eso: pintarlo entero prometía reparto en el campo y dejaba
-zonas que se estiraban treinta kilómetros más allá de la localidad.
+Las zonas siguen el límite administrativo completo, como el mapa de Flex:
+ese mapa pinta el partido entero, no sólo la mancha urbana. Recortarlas
+contra la planta urbana dejaba manchones redondeados y huecos entre zonas
+que no existen en el mapa real.
 """
 import json, os, unicodedata
-from shapely.geometry import shape, mapping
+from shapely.geometry import shape, mapping, Polygon
 from shapely.ops import unary_union
 
 AQUI = os.path.dirname(__file__)
@@ -103,13 +103,11 @@ SIN_SERVICIO = [
 # se suman al Delta, para que el mapa las muestre marcadas como sin servicio.
 ISLA_MIN_KM2 = 0.5
 
-# Margen alrededor de la planta urbana. El dato del IGN es el casco edificado;
-# el reparto llega un poco más lejos (countries, parques industriales, barrios
-# nuevos que todavía no figuran), así que se le da algo más de un kilómetro.
-MARGEN_URBANO = 0.012
+# Los límites de OSM no empalman perfecto entre localidades vecinas: dejan
+# cientos de ranuras de pocas hectáreas que en el mapa se ven como espacios
+# vacíos. Se rellenan; nada que sea de verdad un hueco llega a este tamaño.
+HUECO_MAX_KM2 = 5
 
-# Un pedazo suelto más chico que esto no es un pueblo, es ruido del recorte.
-PUEBLO_MIN_KM2 = 0.4
 
 # Punto de referencia de cada zona: el centro de su localidad cabecera, que es
 # donde se concentra el reparto. No se usa el centro geométrico del polígono
@@ -195,38 +193,46 @@ def km2(g, lat):
     import math
     return g.area * (111.32 ** 2) * math.cos(math.radians(lat))
 
-URBANO = None   # planta urbana del IGN, sin margen
+def cerrar_huecos(feats):
+    """Rellena las ranuras que quedan entre zonas vecinas.
 
-def urbanizar(nombre, g):
-    """Deja de la zona sólo lo que está urbanizado.
+    Cada hueco se le da a la zona con la que comparte más borde, así no se
+    superpone con nadie y el contorno general no se mueve. Se repite hasta que
+    no queda ninguna: tapar una ranura puede dejar al descubierto la de al
+    lado. CABA es un hueco enorme en el medio del conurbano, pero queda afuera
+    por tamaño."""
+    geoms = [shape(f['geometry']).buffer(0) for f in feats]
+    total, cuantas = 0, 0
 
-    El límite de partido no distingue la ciudad del campo: Cañuelas, Zárate o
-    Luján son en su mayor parte rurales y pintarlos enteros promete reparto
-    donde no hay a quién repartirle. Los pueblos del partido quedan, cada uno
-    con su mancha; lo que se va es el campo entre medio.
+    for _ in range(8):
+        union = unary_union(geoms)
+        piezas = list(union.geoms) if union.geom_type == 'MultiPolygon' else [union]
+        huecos = [Polygon(r) for q in piezas for r in q.interiors]
+        huecos = [x for x in huecos if km2(x, x.centroid.y) <= HUECO_MAX_KM2]
+        if not huecos: break
 
-    El margen se agrega alrededor del casco propio y recién después se recorta
-    contra la zona. Al revés —recortar contra la planta ya engordada— entraba
-    el margen del pueblo de al lado y dejaba manchas sueltas que no son de
-    nadie."""
-    if URBANO is None: return g
-    nucleo = solo_poligonos(g.intersection(URBANO))
-    if nucleo.is_empty:
-        print(f'  OJO {nombre}: sin planta urbana, se deja entera')
-        return g
-    if nucleo.geom_type == 'MultiPolygon':
-        piezas = [q for q in nucleo.geoms if km2(q, q.centroid.y) >= PUEBLO_MIN_KM2]
-        if piezas: nucleo = unary_union(piezas)
-    recortada = solo_poligonos(nucleo.buffer(MARGEN_URBANO).intersection(g))
-    fuera = km2(g, g.centroid.y) - km2(recortada, g.centroid.y)
-    if fuera > 20: print(f'  {nombre}: -{fuera:.0f} km² de campo')
-    return recortada
+        tapadas = 0
+        for x in huecos:
+            borde = x.buffer(0.00005)
+            mejor, largo = None, 0
+            for i, g in enumerate(geoms):
+                if not g.intersects(borde): continue
+                # El borde es todo el contorno, no sólo el exterior: una
+                # ranura puede lindar con el agujero de la zona de al lado.
+                l = g.boundary.intersection(borde).length
+                if l > largo: mejor, largo = i, l
+            if mejor is None: continue
+            geoms[mejor] = unary_union([geoms[mejor], x]).buffer(0)
+            total += km2(x, x.centroid.y); tapadas += 1
+        cuantas += tapadas
+        if not tapadas: break
+
+    for i, f in enumerate(feats):
+        f['geometry'] = redondear(mapping(geoms[i]))
+    print(f'  {cuantas} ranuras entre zonas cerradas ({total:.1f} km²)')
 
 def main():
-    global URBANO
     src = json.load(open(os.path.join(DATA, 'localidades.geojson'), encoding='utf-8'))
-    urb = json.load(open(os.path.join(DATA, 'urbano.geojson'), encoding='utf-8'))
-    URBANO = unary_union([shape(f['geometry']).buffer(0) for f in urb['features']])
     agua = shape(json.load(open(os.path.join(DATA, 'agua.geojson'), encoding='utf-8'))['features'][0]['geometry']).buffer(0)
 
     todas = [shape(f['geometry']).buffer(0) for f in src['features'] if f['properties']['region'] == 'GBA']
@@ -266,7 +272,6 @@ def main():
                 islas.append(suelto)
                 print(f'  {nombre}: -{km2(suelto, g.centroid.y):.0f} km² de islas')
             g = solo_poligonos(firme)
-            g = urbanizar(nombre, g)
         g = sin_astillas(solo_poligonos(g))
         if g.is_empty: print(f'  OJO {nombre}: quedó vacía'); return
         g = g.simplify(0.0002, preserve_topology=True)
@@ -301,6 +306,10 @@ def main():
 
     for f in caba: f['properties']['banda'] = 0
     feats += caba
+
+    # Se cierra con CABA ya adentro: si no, quedan ranuras contra la General Paz
+    # y entre los propios barrios.
+    cerrar_huecos(feats)
 
     sin_banda = [f['properties']['nombre'] for f in feats
                  if f['properties']['enRed'] and f['properties'].get('banda') is None]
