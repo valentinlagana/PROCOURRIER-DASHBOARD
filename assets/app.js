@@ -13,7 +13,7 @@
 
 /* ─────────────────────────── Configuración ─────────────────────────── */
 
-const COLORS = ['#fde3cb', '#f9b070', '#ef6a11', '#1a1a1a'];
+const COLORS = ['#ffd08a', '#ffa033', '#f4530a', '#141414'];
 // Tinta legible sobre cada color de la rampa (los dos ultimos son oscuros).
 const TINTAS = ['#0c0c0c', '#0c0c0c', '#ffffff', '#ffffff'];
 const GRIS_SIN_RED = '#9aa7ba';

@@ -869,7 +869,7 @@ a.btn { text-decoration: none; }
 
 // La escala va del blanco al negro pasando por el naranja de la marca:
 // los tres colores de ProCourrier y nada más.
-const COLORES = ['#fde3cb', '#f9b070', '#ef6a11', '#1a1a1a'];
+const COLORES = ['#ffd08a', '#ffa033', '#f4530a', '#141414'];
 const TINTA = ['#0c0c0c', '#0c0c0c', '#ffffff', '#ffffff'];   // texto sobre cada tarifa
 const SIN = '#a8a4a0';
 
@@ -1071,7 +1071,7 @@ svg.append(gMundo, gHud);
 gMundo.append(base, gZonas, gAnillos);
 
 const caminos = zonas.map(z => {
-  const p = el('path', { d: camino(z.geom), class: 'zona', 'stroke-width': .8,
+  const p = el('path', { d: camino(z.geom), class: 'zona', 'stroke-width': .9,
                          'vector-effect': 'non-scaling-stroke' });
   p.addEventListener('pointerenter', ev => mostrarGlobo(z, ev));
   p.addEventListener('pointermove', ev => moverGlobo(ev));
@@ -1203,8 +1203,8 @@ function enZona(p, z) {
 // Cada color tiene su propio peso: el claro necesita más relleno para
 // verse y el negro mucho menos para no tapar media provincia.
 const RELLENO = {
-  zonas:  [.82, .66, .56, .3],
-  ambas:  [.7, .56, .46, .24],
+  zonas:  [.95, .88, .82, .5],
+  ambas:  [.86, .78, .72, .4],
 };
 
 function pintarZonas() {
@@ -1216,7 +1216,7 @@ function pintarZonas() {
     caminos[i].setAttribute('fill', afuera ? SIN : COLORES[t]);
     caminos[i].setAttribute('fill-opacity', afuera ? 0 : (verZonas ? escala[t] : .07));
     caminos[i].setAttribute('stroke', afuera ? '#c4c0bc' : '#ffffff');
-    caminos[i].setAttribute('stroke-opacity', afuera ? .22 : (verZonas ? .68 : .22));
+    caminos[i].setAttribute('stroke-opacity', afuera ? .22 : (verZonas ? .85 : .25));
   });
 }
 
@@ -1232,7 +1232,7 @@ function pintarAnillos() {
       const desde = i === 0 ? null : caminoCirculo(estado.origen, estado.radios[i - 1]);
       const p = el('path', {
         d: caminoCirculo(estado.origen, r) + (desde || ''),
-        'fill-rule': 'evenodd', fill: COLORES[i], 'fill-opacity': .78,
+        'fill-rule': 'evenodd', fill: COLORES[i], 'fill-opacity': .9,
         stroke: COLORES[i], 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke',
       });
       gAnillos.append(p);
@@ -1241,7 +1241,7 @@ function pintarAnillos() {
         d: caminoCirculo(estado.origen, r),
         fill: 'none', stroke: COLORES[i], 'stroke-width': 1.4,
         'stroke-dasharray': '3 7', 'stroke-linecap': 'round',
-        'vector-effect': 'non-scaling-stroke', opacity: .75,
+        'vector-effect': 'non-scaling-stroke', opacity: .9,
       }));
     }
   });
