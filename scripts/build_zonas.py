@@ -193,6 +193,27 @@ def km2(g, lat):
     import math
     return g.area * (111.32 ** 2) * math.cos(math.radians(lat))
 
+def sacar_solapes(feats):
+    """Dos zonas no pueden reclamar el mismo territorio.
+
+    En el dato de origen hay localidades que se pisan —La Plata Centro y
+    Oeste comparten casi 6 km²—. Pintadas una sobre otra el relleno se suma y
+    queda un parche más oscuro. Se queda la primera en aparecer y la otra
+    cede."""
+    geoms = [shape(f['geometry']).buffer(0) for f in feats]
+    sacado = 0
+    for i in range(len(geoms)):
+        for j in range(i + 1, len(geoms)):
+            if not geoms[i].intersects(geoms[j]): continue
+            comun = geoms[i].intersection(geoms[j])
+            if comun.is_empty or km2(comun, comun.centroid.y) < 0.001: continue
+            sacado += km2(comun, comun.centroid.y)
+            geoms[j] = solo_poligonos(geoms[j].difference(geoms[i]))
+    if sacado:
+        for i, f in enumerate(feats):
+            f['geometry'] = redondear(mapping(geoms[i]))
+        print(f'  {sacado:.1f} km² de solapes resueltos')
+
 def cerrar_huecos(feats):
     """Rellena las ranuras que quedan entre zonas vecinas.
 
@@ -309,6 +330,7 @@ def main():
 
     # Se cierra con CABA ya adentro: si no, quedan ranuras contra la General Paz
     # y entre los propios barrios.
+    sacar_solapes(feats)
     cerrar_huecos(feats)
 
     sin_banda = [f['properties']['nombre'] for f in feats

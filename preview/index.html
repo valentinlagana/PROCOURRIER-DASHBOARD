@@ -773,7 +773,7 @@ a.btn { text-decoration: none; }
       </section>
 
       <!-- ══ Add-on: un envío suelto, sólo como referencia ══ -->
-      <details class="bloque addon">
+      <details class="bloque addon" id="addon-envio">
         <summary>
           <svg class="addon__v" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           Cotizar un envío suelto
@@ -1311,7 +1311,9 @@ function pintarHud() {
   gHud.append(el('circle', { cx: dx, cy: dy, r: 8.5, fill: '#ef6a11', stroke: '#ffffff', 'stroke-width': 2.5 }));
   gHud.append(el('circle', { cx: dx, cy: dy, r: 4, fill: '#0c0c0c' }));
 
-  if (estado.destino) {
+  // Con la solapa plegada el punto del destino aparecía sin nada que lo
+  // explicara: sólo se marca mientras se está cotizando un envío suelto.
+  if (estado.destino && $('addon-envio').open) {
     const [qx, qy] = aPantalla(estado.destino.lon, estado.destino.lat);
     gHud.append(el('circle', { cx: qx, cy: qy, r: 5.5, fill: '#0c0c0c', stroke: '#ffffff', 'stroke-width': 2.5 }));
   }
@@ -1570,6 +1572,8 @@ conectarCombo('busca-destino', 'op-destino', z => {
 });
 
 $('cuenta-red').textContent = enRed.length + ' zonas';
+
+$('addon-envio').addEventListener('toggle', pintarHud);
 
 function marcarModo() {
   document.querySelectorAll('.barra-modo button')
