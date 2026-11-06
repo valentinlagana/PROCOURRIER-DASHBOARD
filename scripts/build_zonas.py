@@ -9,6 +9,11 @@ Centro y Oeste; La Matanza Norte y Sur).
 El Delta queda fuera: no se circula en vehículo. Zárate y Campana se recortan
 a tierra firme restando el Paraná y quedándose con la parte donde está la
 ciudad, para no prometer las islas.
+
+Cada zona con servicio se recorta además contra la planta urbana del IGN
+(data/urbano.geojson). Un partido como Zárate mide 1.168 km² y la ciudad es
+una fracción de eso: pintarlo entero prometía reparto en el campo y dejaba
+zonas que se estiraban treinta kilómetros más allá de la localidad.
 """
 import json, os, unicodedata
 from shapely.geometry import shape, mapping
@@ -81,6 +86,14 @@ SIN_SERVICIO = [
 # se suman al Delta, para que el mapa las muestre marcadas como sin servicio.
 ISLA_MIN_KM2 = 0.5
 
+# Margen alrededor de la planta urbana. El dato del IGN es el casco edificado;
+# el reparto llega un poco más lejos (countries, parques industriales, barrios
+# nuevos que todavía no figuran), así que se le da algo más de un kilómetro.
+MARGEN_URBANO = 0.012
+
+# Un pedazo suelto más chico que esto no es un pueblo, es ruido del recorte.
+PUEBLO_MIN_KM2 = 0.4
+
 # Punto de referencia de cada zona: el centro de su localidad cabecera, que es
 # donde se concentra el reparto. No se usa el centro geométrico del polígono
 # porque en partidos grandes cae lejos de la ciudad y cambia la tarifa.
@@ -90,7 +103,7 @@ REFERENCIAS = {
     "Berazategui": (-34.84387, -58.14115),
     "Berisso": (-34.89825, -57.85219),
     "Campana": (-34.16366, -58.95868),
-    "Cañuelas": (-35.14725, -58.69107),
+    "Cañuelas": (-35.05384, -58.76199),
     "Del Viso": (-34.45346, -58.79656),
     "Derqui": (-34.49099, -58.83846),
     "Ensenada": (-34.85336, -57.96544),
@@ -165,8 +178,38 @@ def km2(g, lat):
     import math
     return g.area * (111.32 ** 2) * math.cos(math.radians(lat))
 
+URBANO = None   # planta urbana del IGN, sin margen
+
+def urbanizar(nombre, g):
+    """Deja de la zona sólo lo que está urbanizado.
+
+    El límite de partido no distingue la ciudad del campo: Cañuelas, Zárate o
+    Luján son en su mayor parte rurales y pintarlos enteros promete reparto
+    donde no hay a quién repartirle. Los pueblos del partido quedan, cada uno
+    con su mancha; lo que se va es el campo entre medio.
+
+    El margen se agrega alrededor del casco propio y recién después se recorta
+    contra la zona. Al revés —recortar contra la planta ya engordada— entraba
+    el margen del pueblo de al lado y dejaba manchas sueltas que no son de
+    nadie."""
+    if URBANO is None: return g
+    nucleo = solo_poligonos(g.intersection(URBANO))
+    if nucleo.is_empty:
+        print(f'  OJO {nombre}: sin planta urbana, se deja entera')
+        return g
+    if nucleo.geom_type == 'MultiPolygon':
+        piezas = [q for q in nucleo.geoms if km2(q, q.centroid.y) >= PUEBLO_MIN_KM2]
+        if piezas: nucleo = unary_union(piezas)
+    recortada = solo_poligonos(nucleo.buffer(MARGEN_URBANO).intersection(g))
+    fuera = km2(g, g.centroid.y) - km2(recortada, g.centroid.y)
+    if fuera > 20: print(f'  {nombre}: -{fuera:.0f} km² de campo')
+    return recortada
+
 def main():
+    global URBANO
     src = json.load(open(os.path.join(DATA, 'localidades.geojson'), encoding='utf-8'))
+    urb = json.load(open(os.path.join(DATA, 'urbano.geojson'), encoding='utf-8'))
+    URBANO = unary_union([shape(f['geometry']).buffer(0) for f in urb['features']])
     agua = shape(json.load(open(os.path.join(DATA, 'agua.geojson'), encoding='utf-8'))['features'][0]['geometry']).buffer(0)
 
     todas = [shape(f['geometry']).buffer(0) for f in src['features'] if f['properties']['region'] == 'GBA']
@@ -206,6 +249,7 @@ def main():
                 islas.append(suelto)
                 print(f'  {nombre}: -{km2(suelto, g.centroid.y):.0f} km² de islas')
             g = solo_poligonos(firme)
+            g = urbanizar(nombre, g)
         g = sin_astillas(solo_poligonos(g))
         if g.is_empty: print(f'  OJO {nombre}: quedó vacía'); return
         g = g.simplify(0.0002, preserve_topology=True)
@@ -241,7 +285,13 @@ def main():
     ruta = os.path.join(DATA, 'amba.geojson')
     json.dump({'type': 'FeatureCollection', 'features': feats},
               open(ruta, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    # El cotizador lee las zonas como script, no como fetch: así anda abierto
+    # con doble click, sin servidor.
+    js = os.path.join(AQUI, '..', 'preview', 'amba.js')
+    open(js, 'w', encoding='utf-8').write('window.AMBA=' + open(ruta, encoding='utf-8').read())
+
     red = sum(1 for f in feats if f['properties']['enRed'])
-    print(f'zonas: {len(feats)} | con servicio: {red} | {os.path.getsize(ruta)} bytes')
+    print(f'zonas: {len(feats)} | con servicio: {red} | {os.path.getsize(ruta)} bytes'
+          f' | preview/amba.js {os.path.getsize(js)} bytes')
 
 main()
