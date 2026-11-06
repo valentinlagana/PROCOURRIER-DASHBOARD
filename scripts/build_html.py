@@ -19,6 +19,13 @@ mapa = open(os.path.join(RAIZ, 'preview', 'basemap.jpg'), 'rb').read()
 assert '<script src="amba.js"></script>' in html
 html = html.replace('<script src="amba.js"></script>', '<script>\n' + zonas + '\n</script>')
 
+# jsPDF se inlinea también: el archivo tiene que armar la propuesta sin red.
+js_pdf = os.path.join(RAIZ, 'preview', 'jspdf.umd.min.js')
+tag = ('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/'
+       'jspdf.umd.min.js"></script>')
+assert tag in html
+html = html.replace(tag, '<script>\n' + open(js_pdf, encoding='utf-8').read() + '\n</script>')
+
 # El mapa base pasa a data URI.
 uri = 'data:image/jpeg;base64,' + base64.b64encode(mapa).decode('ascii')
 antes = html
